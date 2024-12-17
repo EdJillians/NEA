@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_restful import Api, Resource, abort
 import psycopg2 as psycopg
 from difflib import get_close_matches
@@ -7,7 +7,7 @@ import random
 
 
 
-app = Flask(__name__)
+app = Flask(__name__,static_url_path='/static')
 api = Api(app)
 
 class Database:
@@ -213,7 +213,7 @@ api.add_resource(CourseSearchResource, "/courses/search")
 
 @app.route('/')
 def home():
-    return '<h1>University Course Search</h1>'
+    return render_template('index.html')
 
 
 if __name__ == '__main__':

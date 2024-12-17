@@ -1,0 +1,15 @@
+body {
+    font-family: "Roboto", sans-serif;
+}
+
+.result-box {
+    border: 1px solid black;
+    margin: 10px 0;
+    padding: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: lightblue;
+}
+
+.label {
+    font-weight: bold;
+}
