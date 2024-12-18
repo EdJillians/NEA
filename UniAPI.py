@@ -95,7 +95,7 @@ class Course:
         }
 
     def calculate_score(self, data):
-        print(data)
+        #print(data)
         if data['year_abroad'] != self.__study_abroad:
             self.__alter_score(0.5)
 
@@ -112,7 +112,7 @@ class Course:
                     start_index = max(i-1, 0)
                     end_index = min(i+2, len(categories))
                     tariff_values = [self.__tariffs.get('tariff_'+str(categories[j])) for j in range(start_index, end_index)]
-                    print(tariff_values, self.__tariffs)
+                    #print(tariff_values, self.__tariffs)
                     tariff_value = sum(tariff_values) / len(tariff_values)
                     break
             if tariff_value!=None:
