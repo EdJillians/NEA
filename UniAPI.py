@@ -73,7 +73,7 @@ class Database:
 
 class Course:
     def __init__(self, course_id, course_name, course_url, course_length, study_abroad, university_id, **tariffs):
-        self.course_id = course_id
+        self.course_id = course_id #course_id is kept as a public attribute because it is used to identify the course
         self.__course_name = course_name
         self.__course_length = course_length
         self.__study_abroad = study_abroad
@@ -82,7 +82,7 @@ class Course:
         self.__tariffs = tariffs
         self.__score = 100 # initial score will be 100
 
-    def convert_to_json(self):
+    def convert_to_json(self): # this method converts the object into a dictionary that can be converted to JSON
         return {
             "course_id": self.course_id,
             "course_name": self.__course_name,
@@ -103,18 +103,15 @@ class Course:
             self.__alter_score(0.5)
         if data.get('grades') and any(self.__tariffs.values()):  
             ucas_points = self.__convert_UCAS_points(data['grades'])
-            #print(ucas_points)
             categories= ["001","048","064","080","096","112","128","144","160","176","192","208","224","240"]
             tariff_value = None
             for i in range(len(categories) - 1):
                 if ucas_points < int(categories[i+1]):
-                    #print(categories[i])
                     start_index = max(i-1, 0)
                     end_index = min(i+2, len(categories))
                     tariff_values = [self.__tariffs.get('tariff_'+str(categories[j])) for j in range(start_index, end_index)]
-                    #print(tariff_values, self.__tariffs)
                     tariff_value = sum(tariff_values) / len(tariff_values)
-                    break
+                    break # break out of the loop once the correct category is found
             if tariff_value!=None:
                 self.__alter_score(tariff_value / 25) #The 25 can be adjusted to change the weighting of the tariff in the overall score
             else:
@@ -127,15 +124,15 @@ class Course:
             
     def __convert_UCAS_points(self, grades):
         total_points = 0
-        scoring_dictionary = {"A*": 56, "A": 48, "B": 40, "C": 32, "D": 24, "E": 16}
+        scoring_dictionary = {"A*": 56, "A": 48, "B": 40, "C": 32, "D": 24, "E": 16} # this dictionary maps a-level grades to their UCAS points
         for grade in grades:
             total_points += scoring_dictionary[grade]
         return total_points
 
     
-    def __alter_score(self, multiplier):
-        self.__score *= multiplier
-    def display_score(self):
+    def __alter_score(self, multiplier): # this method alters the score of the course by multiplying it by a given value
+        self.__score *= multiplier 
+    def display_score(self): # this method returns the score of the course
         return self.__score
     
 
@@ -197,13 +194,16 @@ class CourseSearchResource(Resource):
 
         for course in unique_courses:
             course.calculate_score(data)
-        #    print(course.score)
     
         sorted_courses = sorted(unique_courses, key=lambda x: x.display_score(), reverse=True) # I could write a merge sort for this
         
         if sorted_courses:
-            return jsonify([course.convert_to_json() for course in sorted_courses[:50]])
+            return jsonify([course.convert_to_json() for course in sorted_courses[:5]])
+        
         abort(404, message="No courses found")
+
+    def merge_sort(self,unsorted_courses):
+        pass
 
 
 
