@@ -40,9 +40,11 @@ document.getElementById('search-button').addEventListener('click', async () => {
         const course = json[i];
         results.innerHTML += `<div class="result-box">
             <div class="name"><span class="label">Name: </span><span>${course.course_name}</span></div>
-            <div class="university"><span class="label">University: </span><span>${course.university_id}</span></div>
+            <div class="university"><span class="label">University: </span><span>${course.university_name}</span></div>
             <div class="course-length"><span class="label">Course Length: </span><span>${course.course_length}</span></div>
             <div class="year-abroad"><span class="label">Year Abroad: </span><span>${course.study_abroad}</span></div>
+            <div class="url"><span class="label">URL: </span><a href="${course.url}">${course.course_url}</a></div>
+            <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
         </div>`;
     }
 });

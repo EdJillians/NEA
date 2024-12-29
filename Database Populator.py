@@ -1,103 +1,103 @@
-import psycopg2 as psycopg
-import csv
-import pandas as pd
+import psycopg2 as psycopg  # imports the psycopg2 module to connect to the database
+import csv # imports the csv module to read the csv files
+import pandas as pd 
 
 NEA_FOLDER_PATH = 'c:/Users/edwar/OneDrive/!Computer_Science/NEA/'
 
 def main():
-    # drop_tables()
-    # create_tables()
-    # university_csv= clean_csv(f'{NEA_FOLDER_PATH}dataset/INSTITUTION.csv', 'university')
-    # course_csv=clean_csv(f'{NEA_FOLDER_PATH}dataset/KISCOURSE.csv', 'course')
-    # load_csv(university_csv, 'university')
-    # load_csv(course_csv, 'course')
-    populate_requirement()
-    
+    with psycopg.connect("dbname=University user=postgres password=P9@ndalfos") as conn: # connect to the database
+        # drop_tables(conn)
+        # create_tables(conn)
+        # university_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/INSTITUTION.csv', 'university')
+        # course_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/KISCOURSE.csv', 'course')
+        # load_csv(conn, university_csv, 'university')
+        # load_csv(conn, course_csv, 'course')
+        #populate_requirement(conn)
+        alter_university_types(conn)
 
-def create_tables():
-    with psycopg.connect("dbname=University user=postgres password=P9@ndalfos") as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-            CREATE TABLE "requirement"(
-                "requirement_id" BIGSERIAL NOT NULL,
-                "course_id" VARCHAR(255) NOT NULL,
-                "grade" VARCHAR(255) NOT NULL,
-                "a_level_subject" VARCHAR(255) NOT NULL
-            );
-            ALTER TABLE
-                "requirement" ADD PRIMARY KEY("requirement_id");
+def create_tables(conn):
+    with conn.cursor() as cur:
+        cur.execute("""
+        CREATE TABLE "requirement"(
+            "requirement_id" BIGSERIAL NOT NULL,
+            "course_id" VARCHAR(255) NOT NULL,
+            "grade" VARCHAR(255) NOT NULL,
+            "a_level_subject" VARCHAR(255) NOT NULL
+        );
+        ALTER TABLE
+            "requirement" ADD PRIMARY KEY("requirement_id");
 
-            CREATE TABLE "university"(
-                "university_id" VARCHAR(255) NOT NULL,
-                "university_name" VARCHAR(255) NOT NULL,
-                "university_url" VARCHAR(255),
-                "university_type" VARCHAR(255) NOT NULL,
-                "longitude" FLOAT(53),
-                "latitude" FLOAT(53)
-            );
-            ALTER TABLE
-                "university" ADD PRIMARY KEY("university_id");
+        CREATE TABLE "university"(
+            "university_id" VARCHAR(255) NOT NULL,
+            "university_name" VARCHAR(255) NOT NULL,
+            "university_url" VARCHAR(255),
+            "university_type" VARCHAR(255) NOT NULL,
+            "longitude" FLOAT(53),
+            "latitude" FLOAT(53)
+        );
+        ALTER TABLE
+            "university" ADD PRIMARY KEY("university_id");
 
-            CREATE TABLE "course"(
-                "course_id" VARCHAR(255) NOT NULL,
-                "course_name" VARCHAR(255) NOT NULL,
-                "course_url" VARCHAR(255) NOT NULL,
-                "course_length" FLOAT,
-                "study_abroad" BOOLEAN NOT NULL,
-                "university_id" VARCHAR(255) NOT NULL,
-                "tariff_001" FLOAT,
-                "tariff_048" FLOAT,
-                "tariff_064" FLOAT,
-                "tariff_080" FLOAT,
-                "tariff_096" FLOAT,
-                "tariff_112" FLOAT,
-                "tariff_128" FLOAT,
-                "tariff_144" FLOAT,
-                "tariff_160" FLOAT,
-                "tariff_176" FLOAT,
-                "tariff_192" FLOAT,
-                "tariff_208" FLOAT,
-                "tariff_224" FLOAT,
-                "tariff_240" FLOAT
-            );
-            ALTER TABLE
-                "course" ADD PRIMARY KEY("course_id");
+        CREATE TABLE "course"(
+            "course_id" VARCHAR(255) NOT NULL,
+            "course_name" VARCHAR(255) NOT NULL,
+            "course_url" VARCHAR(255) NOT NULL,
+            "course_length" FLOAT,
+            "study_abroad" BOOLEAN NOT NULL,
+            "university_id" VARCHAR(255) NOT NULL,
+            "tariff_001" FLOAT,
+            "tariff_048" FLOAT,
+            "tariff_064" FLOAT,
+            "tariff_080" FLOAT,
+            "tariff_096" FLOAT,
+            "tariff_112" FLOAT,
+            "tariff_128" FLOAT,
+            "tariff_144" FLOAT,
+            "tariff_160" FLOAT,
+            "tariff_176" FLOAT,
+            "tariff_192" FLOAT,
+            "tariff_208" FLOAT,
+            "tariff_224" FLOAT,
+            "tariff_240" FLOAT
+        );
+        ALTER TABLE
+            "course" ADD PRIMARY KEY("course_id");
 
-            ALTER TABLE
-                "course" ADD CONSTRAINT "course_university_id_foreign" FOREIGN KEY("university_id") REFERENCES "university"("university_id");
+        ALTER TABLE
+            "course" ADD CONSTRAINT "course_university_id_foreign" FOREIGN KEY("university_id") REFERENCES "university"("university_id");
 
-            ALTER TABLE
-                "requirement" ADD CONSTRAINT "requirement_course_id_foreign" FOREIGN KEY("course_id") REFERENCES "course"("course_id");
-            """)
-            conn.commit()
+        ALTER TABLE
+            "requirement" ADD CONSTRAINT "requirement_course_id_foreign" FOREIGN KEY("course_id") REFERENCES "course"("course_id");
+        """)
+        conn.commit()
 
-def load_csv(file_path, table_name):
-    with psycopg.connect("dbname=University user=postgres password=P9@ndalfos") as conn:
-        with conn.cursor() as cur:
-            with open(file_path, 'r') as f:
-                reader = csv.reader(f)
-                headers = next(reader)
-                columns = ', '.join(headers)
-                placeholders = ', '.join(['%s'] * len(headers))
-                for row in reader:
-                    try:
-                        row = [None if value == '' else value for value in row]
-                        cur.execute(
-                            f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})",
-                            row
-                        )
-                        conn.commit()
-                    except Exception as e:
-                        print(f"Error inserting row {row}: {type(e).__name__} - {e}")
-                        conn.rollback()
 
-def clean_csv(file_path, table_name):
+def load_csv(conn, file_path, table_name):
+    with conn.cursor() as cur:
+        with open(file_path, 'r') as f:
+            reader = csv.reader(f) # read the csv file
+            headers = next(reader) # get the headers of the csv file
+            columns = ', '.join(headers) # join the headers together to form the columns of the table
+            placeholders = ', '.join(['%s'] * len(headers)) # create the placeholders for the values to be inserted
+            for row in reader: # iterate through the rows of the csv file
+                try:
+                    row = [None if value == '' else value for value in row]
+                    cur.execute(
+                        f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})",
+                        row
+                    )
+                    conn.commit()
+                except Exception as e:
+                    print(f"Error inserting row {row}: {type(e).__name__} - {e}")
+                    conn.rollback()
+
+def clean_csv(file_path, table_name): # this function cleans the csv files and returns the cleaned csv files
     if table_name == 'university':
         file1 = f'{NEA_FOLDER_PATH}dataset/INSTITUTION.csv'
         file2 = f'{NEA_FOLDER_PATH}dataset/LOCATION.csv'
         df1 = pd.read_csv(file1)
         df2 = pd.read_csv(file2)
-        df1['TYPE'] = 'campus'
+        df1['TYPE'] = 'campus' # this sets all universities to campus type as there is no data for this
         merged_df = pd.merge(df1, df2, on='UKPRN', how='left')
         columns_to_keep1 = [
             'UKPRN', 'LEGAL_NAME', 'PROVURL', 'TYPE', 'LATITUDE', 'LONGITUDE'
@@ -159,23 +159,43 @@ def clean_csv(file_path, table_name):
         cleaned_df.to_csv(output_file, index=False)
         return output_file
 
-def drop_tables():
-    with psycopg.connect("dbname=University user=postgres password=P9@ndalfos") as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-            DROP TABLE IF EXISTS "requirement" CASCADE;
-            DROP TABLE IF EXISTS "university" CASCADE;
-            DROP TABLE IF EXISTS "course" CASCADE;
-            """)
-            conn.commit()
+def drop_tables(conn):
+    with conn.cursor() as cur:
+        cur.execute("""
+        DROP TABLE IF EXISTS "requirement" CASCADE;
+        DROP TABLE IF EXISTS "university" CASCADE;
+        DROP TABLE IF EXISTS "course" CASCADE;
+        """)
+        conn.commit()
 
-def populate_requirement():
-    with psycopg.connect("dbname=University user=postgres password=P9@ndalfos") as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                        INSERT INTO requirement (course_id, grade, a_level_subject) VALUES ('UUUMA-L110~USMA-AFB30', 'A*', 'Mathematics');
-            """)
-            conn.commit()
+def populate_requirement(conn):
+    with conn.cursor() as cur:
+        cur.execute("""
+                    INSERT INTO requirement (course_id, grade, a_level_subject) VALUES ('UUUMA-L110~USMA-AFB30', 'A*', 'Mathematics');
+        """)
+        conn.commit()
+
+
+def alter_university_types(conn):
+    with conn.cursor() as cur:
+        cur.execute("""
+        UPDATE university
+        SET university_type = 'collegic'
+        WHERE university_name IN ('University of Cambridge', 'University of Oxford', 'University of Durham');
+        """)
+        cur.execute("""
+        UPDATE university
+        SET university_type = 'city'
+        WHERE university_name IN ('University of Bristol', 'The University of Leeds','University College London')
+        """)
+        cur.execute("""
+        UPDATE university
+        SET university_type = 'distance'
+        WHERE university_name IN ('The Open University','Arden University Limited')
+        """)       
+
+
+        conn.commit()
 
 
 if __name__ == "__main__":

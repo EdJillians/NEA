@@ -23,9 +23,6 @@ class Database:
             tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], result[6:]))
         return Course(*course_data, **tariffs)
         
-        
-
-
 
     def get_university(self, university_id): # redundant
         self.cursor.execute("SELECT * FROM university WHERE university_id = %s", (university_id,))
@@ -96,6 +93,7 @@ class Course:
 
     def calculate_score(self, data):
         #print(data)
+        db = Database()
         if data['year_abroad'] != self.__study_abroad:
             self.__alter_score(0.5)
 
@@ -119,7 +117,8 @@ class Course:
                 tariff_value = sum([self.__tariffs.get('tariff_'+categories[i]) for i in range(-3, 0)]) / 3
                 if tariff_value:
                     self.__alter_score(tariff_value / 25)
-            
+        if data.get('university_type') != db.get_university(self.__university_id).get_university_type():
+            self.__alter_score(0.5)
         
             
     def __convert_UCAS_points(self, grades):
@@ -134,6 +133,8 @@ class Course:
         self.__score *= multiplier 
     def display_score(self): # this method returns the score of the course
         return self.__score
+    def get_university_id(self):
+        return self.__university_id
     
 
 class University:
@@ -154,6 +155,9 @@ class University:
             "longitude": self.__longitude,
             "latitude": self.__latitude
         }
+    def get_university_type(self):
+        return self.__university_type
+    
 
 class CourseResource(Resource):
     def get(self, course_id):
@@ -198,9 +202,13 @@ class CourseSearchResource(Resource):
         sorted_courses = sorted(unique_courses, key=lambda x: x.display_score(), reverse=True) # I could write a merge sort for this
         
         if sorted_courses:
-            return jsonify([course.convert_to_json() for course in sorted_courses[:5]])
+            return jsonify([course.convert_to_json() | db.get_university(course.get_university_id()).convert_to_json() for course in sorted_courses[:5]])
+         
         
         abort(404, message="No courses found")
+
+
+
 
     def merge_sort(self,unsorted_courses):
         pass
