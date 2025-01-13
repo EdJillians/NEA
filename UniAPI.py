@@ -55,7 +55,7 @@ class Database:
         self.cursor.execute("SELECT course_name FROM course")
         all_course_names = [row[0] for row in self.cursor.fetchall()]
         # Find similar course names
-        similar_names = get_close_matches(search_term, all_course_names, cutoff=0.7, n=100) # selects the top 100 closest matches from all course names
+        similar_names = get_close_matches(search_term, all_course_names, cutoff=0.5, n=100) # selects the top 100 closest matches from all course names
         # Create searches for these course names
         for name in similar_names:
             self.cursor.execute("SELECT * FROM course WHERE course_name = %s", (name,))
@@ -78,6 +78,7 @@ class Course:
         self.__course_url = course_url
         self.__tariffs = tariffs
         self.__score = 100 # initial score will be 100
+        self.__tucked_courses=[]
 
     def convert_to_json(self): # this method converts the object into a dictionary that can be converted to JSON
         return {
@@ -94,11 +95,14 @@ class Course:
     def calculate_score(self, data):
         #print(data)
         db = Database()
-        if data['year_abroad'] != self.__study_abroad:
+
+        if data['year_abroad'] != self.__study_abroad and data['year_abroad']==False:
             self.__alter_score(0.5)
+        elif data['year_abroad'] == self.__study_abroad and data['year_abroad']==True:
+            self.__alter_score(1.5)
 
         if data['course_length'] != self.__course_length:
-            self.__alter_score(0.5)
+            self.__alter_score(0.75)
         if data.get('grades') and any(self.__tariffs.values()):  
             ucas_points = self.__convert_UCAS_points(data['grades'])
             categories= ["001","048","064","080","096","112","128","144","160","176","192","208","224","240"]
@@ -110,20 +114,26 @@ class Course:
                     tariff_values = [self.__tariffs.get('tariff_'+str(categories[j])) for j in range(start_index, end_index)]
                     tariff_value = sum(tariff_values) / len(tariff_values)
                     break # break out of the loop once the correct category is found
-            if tariff_value!=None:
+            if tariff_value is None:
+                self.__alter_score(0.5)
+            elif tariff_value < 240:
                 self.__alter_score(tariff_value / 25) #The 25 can be adjusted to change the weighting of the tariff in the overall score
             else:
                 # Handle case where ucas_points is greater than or equal to the highest category value
                 tariff_value = sum([self.__tariffs.get('tariff_'+categories[i]) for i in range(-3, 0)]) / 3
+                print(tariff_value)
                 if tariff_value:
                     self.__alter_score(tariff_value / 25)
+                else:
+                    self.__alter_score(0.25)
         if data.get('university_type') != db.get_university(self.__university_id).get_university_type():
             self.__alter_score(0.5)
+        
         
             
     def __convert_UCAS_points(self, grades):
         total_points = 0
-        scoring_dictionary = {"A*": 56, "A": 48, "B": 40, "C": 32, "D": 24, "E": 16} # this dictionary maps a-level grades to their UCAS points
+        scoring_dictionary = {"A*": 56, "A": 48, "B": 40, "C": 32, "D": 24, "E": 16,"":0} # this dictionary maps a-level grades to their UCAS points
         for grade in grades:
             total_points += scoring_dictionary[grade]
         return total_points
@@ -135,6 +145,9 @@ class Course:
         return self.__score
     def get_university_id(self):
         return self.__university_id
+    
+    def tuck_course(self,other):
+        self.__tucked_courses.append(other)
     
 
 class University:
@@ -198,15 +211,28 @@ class CourseSearchResource(Resource):
 
         for course in unique_courses:
             course.calculate_score(data)
-    
-        sorted_courses = sorted(unique_courses, key=lambda x: x.display_score(), reverse=True) # I could write a merge sort for this
         
-        if sorted_courses:
-            return jsonify([course.convert_to_json() | db.get_university(course.get_university_id()).convert_to_json() for course in sorted_courses[:5]])
-         
-        
-        abort(404, message="No courses found")
+        university_courses = {}
+        for course in unique_courses:
+            university_id = course.get_university_id()
+            if university_id not in university_courses:
+                university_courses[university_id] = []
+            university_courses[university_id].append(course)
 
+        final_courses = []
+        for courses in university_courses.values():
+            highest_scoring_course = max(courses, key=lambda x: x.display_score())
+            for course in courses:
+                if course != highest_scoring_course:
+                    highest_scoring_course.tuck_course(course)
+            final_courses.append(highest_scoring_course)
+
+        sorted_courses = sorted(final_courses, key=lambda x: x.display_score(), reverse=True)
+
+        if sorted_courses:
+            return jsonify([course.convert_to_json() | db.get_university(course.get_university_id()).convert_to_json() for course in sorted_courses[:20]])
+
+        abort(404, message="No courses found")
 
 
 
