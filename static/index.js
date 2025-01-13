@@ -3,6 +3,7 @@ document.getElementById('search-button').addEventListener('click', async () => {
 
     let response, json;
     try {
+        alert("Fetching data...");
         response = await fetch(resourceUrl, {
             method: 'POST',
             headers: {

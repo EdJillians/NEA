@@ -1,19 +1,77 @@
 import psycopg2 as psycopg  # imports the psycopg2 module to connect to the database
 import csv # imports the csv module to read the csv files
 import pandas as pd 
+from psycopg2 import sql
 
 NEA_FOLDER_PATH = 'c:/Users/edwar/OneDrive/!Computer_Science/NEA/'
 
 def main():
+    # create_database()
     with psycopg.connect("dbname=University user=postgres password=P9@ndalfos") as conn: # connect to the database
-        # drop_tables(conn)
-        # create_tables(conn)
-        # university_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/INSTITUTION.csv', 'university')
-        # course_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/KISCOURSE.csv', 'course')
-        # load_csv(conn, university_csv, 'university')
-        # load_csv(conn, course_csv, 'course')
-        #populate_requirement(conn)
+        drop_tables(conn)
+        create_tables(conn)
+        university_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/INSTITUTION.csv', 'university')
+        course_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/KISCOURSE.csv', 'course')
+        load_csv(conn, university_csv, 'university')
+        load_csv(conn, course_csv, 'course')
+        populate_requirement(conn)
         alter_university_types(conn)
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT course_id, course_name
+                FROM course
+                WHERE course_url = 'http://www.ox.ac.uk/admissions/undergraduate/courses-listing/physics';
+            """)
+            result = cur.fetchone()
+            if result:
+                print(f"Course found: {result}")
+            else:
+                print("Course not found.")
+
+    pass
+
+def create_database():
+    """
+    Creates a PostgreSQL database named 'University'.
+    Requires a PostgreSQL server to be running and accessible.
+    """
+    connection = None
+    cursor = None
+    try:
+        # Connect to the default PostgreSQL database
+        connection = psycopg.connect(
+            dbname="postgres",  # Default database
+            user="postgres",  # Replace with your username
+            password="P9@ndalfos",  # Replace with your password
+            host="localhost",  # Replace with your host (e.g., localhost or an IP address)
+            port="5432"  # Default PostgreSQL port
+        )
+        connection.autocommit = True  # Allow database creation outside of a transaction
+
+        # Create a cursor object
+        cursor = connection.cursor()
+
+        # Create the University database
+        cursor.execute(
+            sql.SQL("CREATE DATABASE {};").format(
+                sql.Identifier("University")
+            )
+        )
+
+        print("Database 'University' created successfully.")
+
+    except psycopg.Error as e:
+        print(f"Error creating database: {e}")
+
+    finally:
+        # Clean up by closing the cursor and connection
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+
+
 
 def create_tables(conn):
     with conn.cursor() as cur:
@@ -122,16 +180,16 @@ def clean_csv(file_path, table_name): # this function cleans the csv files and r
         file4 = f'{NEA_FOLDER_PATH}dataset/TARIFF.csv'
         df3 = pd.read_csv(file3)
         df4 = pd.read_csv(file4)
-        merged_df = pd.merge(df3, df4, on='KISCOURSEID')
+        merged_df = pd.merge(df3, df4, on=['KISCOURSEID', 'UKPRN'], how='inner')
         columns_to_keep = [
-            'KISCOURSEID', 'TITLE', 'CRSEURL', 'NUMSTAGE', 'YEARABROAD', 'UKPRN_x',
+            'KISCOURSEID', 'TITLE', 'CRSEURL', 'NUMSTAGE', 'YEARABROAD', 'UKPRN',
             'T001', 'T048', 'T064', 'T080', 'T096', 'T112', 'T128', 'T144', 'T160', 'T176', 'T192', 'T208', 'T224', 'T240'
         ]
         cleaned_df = merged_df[columns_to_keep]
         cleaned_df['YEARABROAD'] = cleaned_df['YEARABROAD'].replace({2: 1}).fillna(0)
         cleaned_df = cleaned_df.dropna(subset=['KISCOURSEID'])
-        cleaned_df = cleaned_df.drop_duplicates(subset=['KISCOURSEID'], keep='first')
-        cleaned_df = cleaned_df.rename(columns={'UKPRN_x': 'UKPRN'})
+        cleaned_df['KISCOURSEID'] = cleaned_df.apply(lambda row: f"{row['KISCOURSEID']}_{row['UKPRN']}", axis=1)
+        cleaned_df['KISCOURSEID'] = cleaned_df.apply(lambda row: f"{row['KISCOURSEID']}_{row['UKPRN']}_{row['NUMSTAGE']}_{str(row['YEARABROAD'])[0]}", axis=1)
         cleaned_df = cleaned_df.rename(columns={
             'KISCOURSEID': 'course_id',
             'TITLE': 'course_name',
@@ -159,6 +217,7 @@ def clean_csv(file_path, table_name): # this function cleans the csv files and r
         cleaned_df.to_csv(output_file, index=False)
         return output_file
 
+
 def drop_tables(conn):
     with conn.cursor() as cur:
         cur.execute("""
@@ -179,17 +238,17 @@ def populate_requirement(conn):
 def alter_university_types(conn):
     with conn.cursor() as cur:
         cur.execute("""
-        UPDATE university
+        UPDATE University
         SET university_type = 'collegic'
         WHERE university_name IN ('University of Cambridge', 'University of Oxford', 'University of Durham');
         """)
         cur.execute("""
-        UPDATE university
+        UPDATE University
         SET university_type = 'city'
         WHERE university_name IN ('University of Bristol', 'The University of Leeds','University College London')
         """)
         cur.execute("""
-        UPDATE university
+        UPDATE University
         SET university_type = 'distance'
         WHERE university_name IN ('The Open University','Arden University Limited')
         """)       
