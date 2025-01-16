@@ -16,17 +16,6 @@ def main():
         load_csv(conn, course_csv, 'course')
         populate_requirement(conn)
         alter_university_types(conn)
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT course_id, course_name
-                FROM course
-                WHERE course_url = 'http://www.ox.ac.uk/admissions/undergraduate/courses-listing/physics';
-            """)
-            result = cur.fetchone()
-            if result:
-                print(f"Course found: {result}")
-            else:
-                print("Course not found.")
 
     pass
 
@@ -230,7 +219,7 @@ def drop_tables(conn):
 def populate_requirement(conn):
     with conn.cursor() as cur:
         cur.execute("""
-                    INSERT INTO requirement (course_id, grade, a_level_subject) VALUES ('UUUMA-L110~USMA-AFB30', 'A*', 'Mathematics');
+                    INSERT INTO requirement (course_id, grade, a_level_subject) VALUES ('2571192_10007798_10007798_4.0_1', 'A', 'Mathematics');
         """)
         conn.commit()
 
@@ -238,7 +227,7 @@ def populate_requirement(conn):
 def alter_university_types(conn):
     with conn.cursor() as cur:
         cur.execute("""
-        UPDATE University
+        UPDATE "university"
         SET university_type = 'collegic'
         WHERE university_name IN ('University of Cambridge', 'University of Oxford', 'University of Durham');
         """)

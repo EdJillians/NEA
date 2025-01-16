@@ -18,7 +18,6 @@
     <h1>University Course Search</h1>
 
     <h2>Search for Courses</h2>
-
     <h3>Course Name <input id="search-input"/></h3>
     <h3>Year Abroad <input id="year-abroad-checkbox" type="checkbox"/></h3>
     <h3>Course Length <input id="course-length-input"></h3>
@@ -30,53 +29,33 @@
             <option value="distance">Distance</option>
         </select>
     </h3>
+    <h3>Postcode <input id="postcode-input"/></h3>
     <h3>A-Level Grades</h3>
-    <select id="grade-dropdown1">
-        <option value="" selected></option>
-        <option value="A*">A*</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="D">D</option>
-        <option value="E">E</option>
-    </select>
-    <select id="grade-dropdown2">
-        <option value="" selected></option>
-        <option value="A*">A*</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="D">D</option>
-        <option value="E">E</option>
-    </select>
-    <select id="grade-dropdown3">
-        <option value="" selected></option>
-        <option value="A*">A*</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="D">D</option>
-        <option value="E">E</option>
-    </select>
-    <select id="grade-dropdown4">
-        <option value="" selected></option>
-        <option value="A*">A*</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="D">D</option>
-        <option value="E">E</option>
-    </select>
+    <!-- Keep the select elements, remove the hardcoded options -->
+    <select id="subject-dropdown1"></select>
+    <select id="grade-dropdown1"></select>
+    <br>
+    <select id="subject-dropdown2"></select>
+    <select id="grade-dropdown2"></select>
+    <br>
+    <select id="subject-dropdown3"></select>
+    <select id="grade-dropdown3"></select>
+    <br>
+    <select id="subject-dropdown4"></select>
+    <select id="grade-dropdown4"></select>
 
     
-
+    <br>
     
     <button id="search-button">Search</button>
 
     <h2>Results</h2>
 
+    <img id="spinner" class="spinner" src="/static/assets/spinner.gif" alt="loading" />
+
     <div id="results">
         <!-- Results will be displayed here -->
+    
     </div>
 
     <!-- import JavaScript -->

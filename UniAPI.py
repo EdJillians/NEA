@@ -2,9 +2,10 @@ from flask import Flask, jsonify, request, render_template
 from flask_restful import Api, Resource, abort
 import psycopg2 as psycopg
 from difflib import get_close_matches
-import random
 
-
+from geopy.distance import geodesic
+from geopy.geocoders import Nominatim
+import time
 
 
 app = Flask(__name__,static_url_path='/static')
@@ -24,29 +25,29 @@ class Database:
         return Course(*course_data, **tariffs)
         
 
-    def get_university(self, university_id): # redundant
+    def get_university(self, university_id): 
         self.cursor.execute("SELECT * FROM university WHERE university_id = %s", (university_id,))
         result = self.cursor.fetchone()
         if result:
             return University(*result)
         return None
 
-    def search_courses(self, course_name, course_length=None, limit=5): # shouldnt be used
-        if course_length:
-            self.cursor.execute("SELECT * FROM course WHERE course_name LIKE %s AND course_length = %s LIMIT %s", ('%' + course_name + '%', course_length, limit))
-        else:
-            self.cursor.execute("SELECT * FROM course WHERE course_name LIKE %s LIMIT %s", ('%' + course_name + '%', limit))
-        results = self.cursor.fetchall()
+    # def search_courses(self, course_name, course_length=None, limit=5): # shouldnt be used
+    #     if course_length:
+    #         self.cursor.execute("SELECT * FROM course WHERE course_name LIKE %s AND course_length = %s LIMIT %s", ('%' + course_name + '%', course_length, limit))
+    #     else:
+    #         self.cursor.execute("SELECT * FROM course WHERE course_name LIKE %s LIMIT %s", ('%' + course_name + '%', limit))
+    #     results = self.cursor.fetchall()
 
-        courses = []
-        for result in results:
-            course_data = result[:6]
-            tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], result[6:]))
-            courses.append(Course(*course_data, **tariffs))
+    #     courses = []
+    #     for result in results:
+    #         course_data = result[:6]
+    #         tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], result[6:]))
+    #         courses.append(Course(*course_data, **tariffs))
         
-        return courses if results else []
-    def __del__(self):
-        self.connection.close()
+    #     return courses if results else []
+    # def __del__(self):
+    #     self.connection.close()
     
     
     def select_courses(self, search_term): # selects possible relevant courses from the database
@@ -55,21 +56,28 @@ class Database:
         self.cursor.execute("SELECT course_name FROM course")
         all_course_names = [row[0] for row in self.cursor.fetchall()]
         # Find similar course names
-        similar_names = get_close_matches(search_term, all_course_names, cutoff=0.5, n=100) # selects the top 100 closest matches from all course names
+        similar_names = get_close_matches(search_term, all_course_names, cutoff=0.6, n=300) # selects the top 100 closest matches from all course names
         # Create searches for these course names
         for name in similar_names:
-            self.cursor.execute("SELECT * FROM course WHERE course_name = %s", (name,))
+            self.cursor.execute("""
+            SELECT course.*, university.*
+            FROM course
+            JOIN university ON course.university_id = university.university_id
+            WHERE course.course_name = %s
+            """, (name,))
             results = self.cursor.fetchall()
             for result in results:
-                course_data = result[:6] # course_data is a tuple of the first 6 elements of the retrieved row
-                tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], result[6:])) # this converts the tariffs columns into a dictionary
-                courses.append(Course(*course_data, **tariffs)) # this instantiates a Course object with the course_data tuple and the tariffs dictionary
+                course_data = result[:6]  # course_data is a tuple of the first 6 elements of the retrieved row
+                tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], result[6:20]))  # this converts the tariffs columns into a dictionary
+                university_data = result[20:]  # university_data is the remaining elements of the retrieved row
+                university = University(*university_data)  # instantiate a University object
+                courses.append(Course(*course_data, uni=university, **tariffs))  # instantiate a Course object with the course_data tuple, the university object, and the tariffs dictionary
         return courses
 
 
 
 class Course:
-    def __init__(self, course_id, course_name, course_url, course_length, study_abroad, university_id, **tariffs):
+    def __init__(self, course_id, course_name, course_url, course_length, study_abroad, university_id, uni ,**tariffs):
         self.course_id = course_id #course_id is kept as a public attribute because it is used to identify the course
         self.__course_name = course_name
         self.__course_length = course_length
@@ -79,6 +87,8 @@ class Course:
         self.__tariffs = tariffs
         self.__score = 100 # initial score will be 100
         self.__tucked_courses=[]
+        self.__distance=0
+        self.__university=uni
 
     def convert_to_json(self): # this method converts the object into a dictionary that can be converted to JSON
         return {
@@ -89,12 +99,14 @@ class Course:
             "university_id": self.__university_id,
             "course_url": self.__course_url,
             **self.__tariffs,
-            "score": self.__score
+            "score": self.__score,
+            "distance": self.__distance,
+            "university_name": self.__university.get_university_name(),
+            "university_type": self.__university.get_university_type()
         }
 
-    def calculate_score(self, data):
+    def calculate_score(self, data): # this method calculates the score of the course based on the user's data
         #print(data)
-        db = Database()
 
         if data['year_abroad'] != self.__study_abroad and data['year_abroad']==False:
             self.__alter_score(0.5)
@@ -126,10 +138,51 @@ class Course:
                     self.__alter_score(tariff_value / 25)
                 else:
                     self.__alter_score(0.25)
-        if data.get('university_type') != db.get_university(self.__university_id).get_university_type():
+        if data.get('university_type') != self.__university.get_university_type():
             self.__alter_score(0.5)
+        #print(data.get('postcode'))
+        if data.get('postcode'):
+            self.__calculate_distance(data)
+            print(self.__distance)
+            if self.__distance == "Invalid postcode":
+                pass
+            elif self.__distance > 100:
+                self.__alter_score(0.5)
+            elif self.__distance > 50:
+                self.__alter_score(0.75)
+            elif self.__distance > 25:
+                self.__alter_score(1.25)
+            else:
+                self.__alter_score(1.5)
+        else:
+            print("invalid postcode")
+        if data.get('subjects'):
+            for subject in data.get('subjects'):
+                pass
+       
+
+
+    
+    def __calculate_distance(self, data):
         
+        location = data.get("coords")
+
+        if not location:
+            self.__distance = "Invalid postcode"
+            return
         
+        t=time.time()
+        university_coords = self.__university.get_university_coordinates()
+        user_coords = (location.latitude, location.longitude)
+        print(time.time()-t)
+        
+        t=time.time()
+        self.__distance = geodesic(user_coords, university_coords).km
+        self.__distance = round(self.__distance, 2)
+        print(time.time()-t)
+
+
+
             
     def __convert_UCAS_points(self, grades):
         total_points = 0
@@ -170,7 +223,10 @@ class University:
         }
     def get_university_type(self):
         return self.__university_type
-    
+    def get_university_coordinates(self):
+        return (self.__latitude, self.__longitude)
+    def get_university_name(self):
+        return self.__university_name
 
 class CourseResource(Resource):
     def get(self, course_id):
@@ -190,34 +246,45 @@ class UniversityResource(Resource):
         abort(404, message="University not found")
 
 class CourseSearchResource(Resource):
+    def __init__(self):
+        self.db=Database()
+
+
+
     def get(self):
         course_name = request.args.get('course_name')
         if not course_name:
             abort(400, message="Course name is required")
-        db = Database()
-        courses = db.search_courses(course_name)
+        
+        courses = self.db.search_courses(course_name)
         if courses:
             return jsonify([course.convert_to_json() for course in courses])
         abort(404, message="No courses found")
     
     def post(self):
+
         data = request.get_json()
         if not data or 'search_term' not in data:
             abort(400, message="No search term provided")
-        db = Database()
-        courses = db.select_courses(data['search_term'])
+        
+        courses = self.db.select_courses(data['search_term'])
+
 
         unique_courses = {course.course_id: course for course in courses}.values()
 
-        for course in unique_courses:
-            course.calculate_score(data)
-        
+        postcode = data['postcode']
+        geolocator=Nominatim(user_agent="uniapi")
+        data["coords"]= geolocator.geocode(postcode, timeout=10)
+
         university_courses = {}
         for course in unique_courses:
-            university_id = course.get_university_id()
+            course.calculate_score(data)
+            university_id = course.get_university_id()# this is for tucking courses
             if university_id not in university_courses:
                 university_courses[university_id] = []
             university_courses[university_id].append(course)
+
+
 
         final_courses = []
         for courses in university_courses.values():
@@ -229,8 +296,9 @@ class CourseSearchResource(Resource):
 
         sorted_courses = sorted(final_courses, key=lambda x: x.display_score(), reverse=True)
 
+
         if sorted_courses:
-            return jsonify([course.convert_to_json() | db.get_university(course.get_university_id()).convert_to_json() for course in sorted_courses[:20]])
+            return jsonify([course.convert_to_json() for course in sorted_courses[:100]])
 
         abort(404, message="No courses found")
 
