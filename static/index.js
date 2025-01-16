@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     course_length: parseFloat(document.getElementById('course-length-input').value),
                     university_type: document.getElementById('university-type-dropdown').value,
                     postcode: document.getElementById('postcode-input').value,
+                    preferred_distance:document.getElementById('distance-dropdown').value,
                     subject: [
                         document.getElementById('subject-dropdown1').value,
                         document.getElementById('subject-dropdown2').value,
