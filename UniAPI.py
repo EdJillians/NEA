@@ -8,10 +8,10 @@ from geopy.geocoders import Nominatim
 import time
 
 
-app = Flask(__name__,static_url_path='/static')
-api = Api(app)
+app = Flask(__name__,static_url_path='/static') # this creates a Flask app
+api = Api(app) # this creates a Flask-RESTful API
 
-class Database:
+class Database: # this class is used to interact with the database
     def __init__(self):
         self.connection = psycopg.connect("dbname=University user=postgres password=P9@ndalfos")
         self.cursor = self.connection.cursor()
@@ -54,41 +54,50 @@ class Database:
         courses = []
         # Fetch all course names from the database
         self.cursor.execute("SELECT course_name FROM course")
-        all_course_names = [row[0] for row in self.cursor.fetchall()]
+        all_course_names = [row[0] for row in self.cursor.fetchall()] # this list comprehension extracts the course names from the fetched rows
         # Find similar course names
-        similar_names = get_close_matches(search_term, all_course_names, cutoff=0.6, n=300) # selects the top 100 closest matches from all course names
+        similar_names = get_close_matches(search_term, all_course_names, cutoff=0.6, n=300) # selects up to 300 closest matches from all course names
         # Create searches for these course names
-        for name in similar_names:
-            self.cursor.execute("""
+        for name in similar_names: # iterate through the similar course names
+            self.cursor.execute(""" 
             SELECT course.*, university.*
             FROM course
             JOIN university ON course.university_id = university.university_id
             WHERE course.course_name = %s
-            """, (name,))
+            """, (name,)) # this query selects the course and university data for the course with the current name
             results = self.cursor.fetchall()
+
+            self.cursor.execute("""
+            SELECT grade, a_level_subject 
+            FROM requirement
+            WHERE requirement.course_id = %s
+            """, (results[0][0],)) # this query selects the requirements for the course with the current name
+            requirement_results = self.cursor.fetchall()
+            requirements = [{"grade": req[0], "a_level_subject": req[1]} for req in requirement_results]
             for result in results:
                 course_data = result[:6]  # course_data is a tuple of the first 6 elements of the retrieved row
                 tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], result[6:20]))  # this converts the tariffs columns into a dictionary
                 university_data = result[20:]  # university_data is the remaining elements of the retrieved row
                 university = University(*university_data)  # instantiate a University object
-                courses.append(Course(*course_data, uni=university, **tariffs))  # instantiate a Course object with the course_data tuple, the university object, and the tariffs dictionary
+                courses.append(Course(*course_data, uni=university, requirements=requirements, **tariffs))  # instantiate a Course object with the course_data tuple, the university object, the requirements, and the tariffs dictionary
         return courses
 
 
 
 class Course:
-    def __init__(self, course_id, course_name, course_url, course_length, study_abroad, university_id, uni ,**tariffs):
+    def __init__(self, course_id, course_name, course_url, course_length, study_abroad, university_id, uni ,requirements,**tariffs):
         self.course_id = course_id #course_id is kept as a public attribute because it is used to identify the course
         self.__course_name = course_name
         self.__course_length = course_length
         self.__study_abroad = study_abroad
         self.__university_id = university_id
         self.__course_url = course_url
-        self.__tariffs = tariffs
+        self.__tariffs = tariffs # this is a dictionary containing the tariff values for the course
         self.__score = 100 # initial score will be 100
         self.__tucked_courses=[]
-        self.__distance=0
-        self.__university=uni
+        self.__distance=0 # this is the distance from the user's location to the university
+        self.__university=uni # this is the university object that the course belongs to
+        self.__requirements = requirements # this is a list of dictionaries containing the requirements for the course
 
     def convert_to_json(self): # this method converts the object into a dictionary that can be converted to JSON
         return {
@@ -115,16 +124,16 @@ class Course:
 
         if data['course_length'] != self.__course_length:
             self.__alter_score(0.75)
-        if data.get('grades') and any(self.__tariffs.values()):  
+        if data.get('grades') and any(self.__tariffs.values()):  #check if the user has entered grades and if the course has tariff values
             ucas_points = self.__convert_UCAS_points(data['grades'])
-            categories= ["001","048","064","080","096","112","128","144","160","176","192","208","224","240"]
+            categories= ["001","048","064","080","096","112","128","144","160","176","192","208","224","240"]# this list contains the categories of UCAS points
             tariff_value = None
-            for i in range(len(categories) - 1):
+            for i in range(len(categories) - 1): # iterate through the categories to find the correct category for the user's UCAS points
                 if ucas_points < int(categories[i+1]):
                     start_index = max(i-1, 0)
                     end_index = min(i+2, len(categories))
-                    tariff_values = [self.__tariffs.get('tariff_'+str(categories[j])) for j in range(start_index, end_index)]
-                    tariff_value = sum(tariff_values) / len(tariff_values)
+                    tariff_values = [self.__tariffs.get('tariff_'+str(categories[j])) for j in range(start_index, end_index)]# this list contains the tariff values of the categories surrounding the user's UCAS points
+                    tariff_value = sum(tariff_values) / len(tariff_values)# this calculates the average tariff value of the surrounding categories
                     break # break out of the loop once the correct category is found
             if tariff_value is None:
                 self.__alter_score(0.5)
@@ -132,33 +141,46 @@ class Course:
                 self.__alter_score(tariff_value / 25) #The 25 can be adjusted to change the weighting of the tariff in the overall score
             else:
                 # Handle case where ucas_points is greater than or equal to the highest category value
-                tariff_value = sum([self.__tariffs.get('tariff_'+categories[i]) for i in range(-3, 0)]) / 3
+                tariff_value = sum([self.__tariffs.get('tariff_'+categories[i]) for i in range(-3, 0)]) / 3 # this calculates the average tariff value of the 3 highest categories
                 print(tariff_value)
                 if tariff_value:
                     self.__alter_score(tariff_value / 25)
                 else:
                     self.__alter_score(0.25)
-        if data.get('university_type') != self.__university.get_university_type():
+        if data.get('university_type') != self.__university.get_university_type():# this checks if the user's university type is the same as the course's university type
             self.__alter_score(0.5)
         #print(data.get('postcode'))
         if data.get('postcode'):
-            self.__calculate_distance(data)
-            print(self.__distance)
+            self.__calculate_distance(data) # this calculates the distance from the user's location to the university
+            #print(self.__distance)
             if self.__distance == "Invalid postcode":
                 pass
-            elif self.__distance > 100:
-                self.__alter_score(0.5)
-            elif self.__distance > 50:
-                self.__alter_score(0.75)
-            elif self.__distance > 25:
-                self.__alter_score(1.25)
             else:
-                self.__alter_score(1.5)
+                print(data.get('preferred_distance'))
+                preferred_distance = data.get('preferred_distance')
+                if preferred_distance == "More than 500" and self.__distance > 500:
+                    self.__alter_score(1.4)
+                elif preferred_distance == "400-500" and 400 <= self.__distance <= 500:
+                    self.__alter_score(1.4)
+                elif preferred_distance == "300-400" and 300 <= self.__distance <= 400:
+                    self.__alter_score(1.4)
+                elif preferred_distance == "200-300" and 200 <= self.__distance <= 300:
+                    self.__alter_score(1.4)
+                elif preferred_distance == "100-200" and 100 <= self.__distance <= 200:
+                    self.__alter_score(1.4)
+                elif preferred_distance == "Less than 100" and self.__distance < 100:
+                    self.__alter_score(1.4)
+                else:
+                    self.__alter_score(0.9)
+
         else:
             print("invalid postcode")
         if data.get('subjects'):
-            for subject in data.get('subjects'):
-                pass
+            for subject in self.__requirements:
+                if subject['a_level_subject'] not in data.get('subjects'):
+                    self.__alter_score(0.25)
+                    break
+
        
 
 
@@ -171,15 +193,14 @@ class Course:
             self.__distance = "Invalid postcode"
             return
         
-        t=time.time()
         university_coords = self.__university.get_university_coordinates()
         user_coords = (location.latitude, location.longitude)
-        print(time.time()-t)
+
         
-        t=time.time()
+
         self.__distance = geodesic(user_coords, university_coords).km
         self.__distance = round(self.__distance, 2)
-        print(time.time()-t)
+
 
 
 
