@@ -58,6 +58,7 @@ class Database: # this class is used to interact with the database
         # Find similar course names
         similar_names = get_close_matches(search_term, all_course_names, cutoff=0.6, n=300) # selects up to 300 closest matches from all course names
         # Create searches for these course names
+
         for name in similar_names: # iterate through the similar course names
             self.cursor.execute(""" 
             SELECT course.*, university.*
@@ -66,7 +67,7 @@ class Database: # this class is used to interact with the database
             WHERE course.course_name = %s
             """, (name,)) # this query selects the course and university data for the course with the current name
             results = self.cursor.fetchall()
-
+            course_description = self.cursor.description
             self.cursor.execute("""
             SELECT grade, a_level_subject 
             FROM requirement
@@ -75,9 +76,14 @@ class Database: # this class is used to interact with the database
             requirement_results = self.cursor.fetchall()
             requirements = [{"grade": req[0], "a_level_subject": req[1]} for req in requirement_results]
             for result in results:
+                #print(result)
                 course_data = result[:6]  # course_data is a tuple of the first 6 elements of the retrieved row
-                tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], result[6:20]))  # this converts the tariffs columns into a dictionary
-                university_data = result[20:]  # university_data is the remaining elements of the retrieved row
+                #print(course_data)
+                tariffs = dict(zip([desc[0] for desc in course_description[6:20]], result[6:20]))  # this converts the tariffs columns into a dictionary
+                #print(course_description)
+                #print(tariffs)
+                university_data = result[20:26]  # university_data is the next 6 elements of the retrieved row
+                #print(university_data)
                 university = University(*university_data)  # instantiate a University object
                 courses.append(Course(*course_data, uni=university, requirements=requirements, **tariffs))  # instantiate a Course object with the course_data tuple, the university object, the requirements, and the tariffs dictionary
         return courses
@@ -114,16 +120,67 @@ class Course:
             "university_type": self.__university.get_university_type()
         }
 
-    def calculate_score(self, data): # this method calculates the score of the course based on the user's data
-        #print(data)
 
-        if data['year_abroad'] != self.__study_abroad and data['year_abroad']==False:
-            self.__alter_score(0.5)
-        elif data['year_abroad'] == self.__study_abroad and data['year_abroad']==True:
-            self.__alter_score(1.5)
 
-        if data['course_length'] != self.__course_length:
-            self.__alter_score(0.75)
+
+
+    def calculate_score(self, data):
+        # Normalize scores
+        distance_score = self.__calculate_distance_score(data)
+        tariff_score = self.__calculate_tariff_score(data) 
+        university_type_score = self.__calculate_university_type_score(data) 
+        year_abroad_score = self.__calculate_year_abroad_score(data) 
+        course_length_score = self.__calculate_course_length_score(data) 
+
+        # Dynamic weights based on user preferences
+        distance_weight = data.get('distance_weight', 50)
+        tariff_weight = data.get('tariff_weight', 100)
+        university_type_weight = data.get('university_type_weight', 50)
+        year_abroad_weight = data.get('year_abroad_weight', 50)
+        course_length_weight = data.get('course_length_weight', 50)
+
+        # Calculate final score
+        final_score = (
+            distance_score * distance_weight +
+            tariff_score * tariff_weight +
+            university_type_score * university_type_weight +
+            year_abroad_score * year_abroad_weight +
+            course_length_score * course_length_weight
+        )# / (distance_weight + tariff_weight + university_type_weight + year_abroad_weight + course_length_weight)
+
+        self.__score = final_score
+        return final_score
+
+    def __calculate_distance_score(self, data):
+        if data.get('postcode'):
+            self.__calculate_distance(data)
+            if self.__distance == "Invalid postcode":
+                distance_score = 0
+            else:
+                preferred_distance = data.get('preferred_distance')
+                #print(preferred_distance)
+                if preferred_distance == "More than 500" and self.__distance > 500:
+                    distance_score = 1
+                elif preferred_distance == "400-500" and 400 <= self.__distance <= 500:
+                    distance_score = 1
+                elif preferred_distance == "300-400" and 300 <= self.__distance <= 400:
+                    distance_score = 1
+                elif preferred_distance == "200-300" and 200 <= self.__distance <= 300:
+                    distance_score = 1
+                elif preferred_distance == "100-200" and 100 <= self.__distance <= 200:
+                    distance_score = 1
+                elif preferred_distance == "Less than 100" and self.__distance < 100:
+                    distance_score = 1
+                elif preferred_distance=="none":
+                    distance_score = 0
+                else:
+                    distance_score = 0.5
+        else:
+            distance_score = 0 
+        return distance_score
+
+
+    def __calculate_tariff_score(self, data):
         if data.get('grades') and any(self.__tariffs.values()):  #check if the user has entered grades and if the course has tariff values
             ucas_points = self.__convert_UCAS_points(data['grades'])
             categories= ["001","048","064","080","096","112","128","144","160","176","192","208","224","240"]# this list contains the categories of UCAS points
@@ -132,57 +189,23 @@ class Course:
                 if ucas_points < int(categories[i+1]):
                     start_index = max(i-1, 0)
                     end_index = min(i+2, len(categories))
-                    tariff_values = [self.__tariffs.get('tariff_'+str(categories[j])) for j in range(start_index, end_index)]# this list contains the tariff values of the categories surrounding the user's UCAS points
-                    tariff_value = sum(tariff_values) / len(tariff_values)# this calculates the average tariff value of the surrounding categories
+                    tariff_values = [self.__tariffs.get('tariff_'+str(categories[j])) for j in range(start_index, end_index)] # this list contains the tariff values of the categories surrounding the user's UCAS points
+                    tariff_value = sum(tariff_values) / len(tariff_values) # this calculates the average tariff value of the surrounding categories
                     break # break out of the loop once the correct category is found
             if tariff_value is None:
-                self.__alter_score(0.5)
+                tariff_score = 0.5
             elif tariff_value < 240:
-                self.__alter_score(tariff_value / 25) #The 25 can be adjusted to change the weighting of the tariff in the overall score
+                tariff_score = tariff_value / 100
             else:
                 # Handle case where ucas_points is greater than or equal to the highest category value
-                tariff_value = sum([self.__tariffs.get('tariff_'+categories[i]) for i in range(-3, 0)]) / 3 # this calculates the average tariff value of the 3 highest categories
-                print(tariff_value)
+                tariff_value = sum([self.__tariffs.get('tariff_'+categories[i]) for i in range(-3, 0)]) / 3
                 if tariff_value:
-                    self.__alter_score(tariff_value / 25)
+                    tariff_score = tariff_value / 100
                 else:
-                    self.__alter_score(0.25)
-        if data.get('university_type') != self.__university.get_university_type():# this checks if the user's university type is the same as the course's university type
-            self.__alter_score(0.5)
-        #print(data.get('postcode'))
-        if data.get('postcode'):
-            self.__calculate_distance(data) # this calculates the distance from the user's location to the university
-            #print(self.__distance)
-            if self.__distance == "Invalid postcode":
-                pass
-            else:
-                print(data.get('preferred_distance'))
-                preferred_distance = data.get('preferred_distance')
-                if preferred_distance == "More than 500" and self.__distance > 500:
-                    self.__alter_score(1.4)
-                elif preferred_distance == "400-500" and 400 <= self.__distance <= 500:
-                    self.__alter_score(1.4)
-                elif preferred_distance == "300-400" and 300 <= self.__distance <= 400:
-                    self.__alter_score(1.4)
-                elif preferred_distance == "200-300" and 200 <= self.__distance <= 300:
-                    self.__alter_score(1.4)
-                elif preferred_distance == "100-200" and 100 <= self.__distance <= 200:
-                    self.__alter_score(1.4)
-                elif preferred_distance == "Less than 100" and self.__distance < 100:
-                    self.__alter_score(1.4)
-                else:
-                    self.__alter_score(0.9)
-
+                    tariff_score = 0.25
         else:
-            print("invalid postcode")
-        if data.get('subjects'):
-            for subject in self.__requirements:
-                if subject['a_level_subject'] not in data.get('subjects'):
-                    self.__alter_score(0.25)
-                    break
-
-       
-
+            tariff_score = 0.05 # score when the user has not entered grades or the course has no tariff values
+        return tariff_score
 
     
     def __calculate_distance(self, data):
@@ -202,8 +225,30 @@ class Course:
         self.__distance = round(self.__distance, 2)
 
 
-
-
+    def __calculate_year_abroad_score(self, data):
+        if data['year_abroad'] != self.__study_abroad and data['year_abroad']==False: # score if the user doesnt want to study abroad but the course offers it
+            year_abroad_score = 0.5
+        elif data['year_abroad'] == self.__study_abroad and data['year_abroad']==True: # score if the user wants to study abroad and the course offers it
+            year_abroad_score = 1
+        elif data['year_abroad'] == self.__study_abroad and data['year_abroad']==False: # score if the user doesnt want to study abroad and the course doesnt offer it
+            year_abroad_score = 1
+        else:
+            year_abroad_score = 0.25 # score when user wants to study abroad but course does not offer it
+        return year_abroad_score
+    
+    def __calculate_course_length_score(self, data):
+        if data['course_length'] != self.__course_length: # score if the user's preferred course length is different from the course's length
+            course_length_score = 0.75
+        else:
+            course_length_score = 1
+        return course_length_score
+    
+    def __calculate_university_type_score(self, data):
+        if data.get('university_type') != self.__university.get_university_type(): # score if the user's preferred university type is different from the course's university type
+            university_type_score = 0.5
+        else:
+            university_type_score = 1
+        return university_type_score
             
     def __convert_UCAS_points(self, grades):
         total_points = 0
