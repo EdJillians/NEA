@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
         // Populate subject dropdowns dynamically
         const subjects = [
-            "Biology", "Chemistry", "Physics", "Environmental Science", "Geology", "Psychology", 
+            "","Biology", "Chemistry", "Physics", "Environmental Science", "Geology", "Psychology", 
             "Mathematics", "Further Mathematics", "Statistics", "History", "Geography", 
             "Religious Studies", "Philosophy", "Politics", "Sociology", "Law", 
             "Classical Civilisation", "English Language", "English Literature", "French", 

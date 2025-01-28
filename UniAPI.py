@@ -56,7 +56,7 @@ class Database: # this class is used to interact with the database
         self.cursor.execute("SELECT course_name FROM course")
         all_course_names = [row[0] for row in self.cursor.fetchall()] # this list comprehension extracts the course names from the fetched rows
         # Find similar course names
-        similar_names = get_close_matches(search_term, all_course_names, cutoff=0.4, n=300) # selects up to 300 closest matches from all course names
+        similar_names = get_close_matches(search_term, all_course_names, cutoff=0.54, n=300) # selects up to 300 closest matches from all course names
         # Create searches for these course names
 
         for name in similar_names: # iterate through the similar course names
@@ -114,8 +114,8 @@ class Course:
             "university_id": self.__university_id,
             "course_url": self.__course_url,
             **self.__tariffs,
-            "score": self.__score,
-            "distance": self.__distance,
+            "score": round(self.__score, 2),
+            "distance": round(self.__distance, 2),
             "university_name": self.__university.get_university_name(),
             "university_type": self.__university.get_university_type()
         }
@@ -141,13 +141,17 @@ class Course:
         print(distance_weight, tariff_weight, university_type_weight, year_abroad_weight, course_length_weight) 
 
         # Calculate final score
-        final_score = (
-            distance_score * distance_weight +
-            tariff_score * tariff_weight +
-            university_type_score * university_type_weight +
-            year_abroad_score * year_abroad_weight +
-            course_length_score * course_length_weight
-        )# / (distance_weight + tariff_weight + university_type_weight + year_abroad_weight + course_length_weight)
+        total_weight = distance_weight + tariff_weight + university_type_weight + year_abroad_weight + course_length_weight
+        if total_weight == 0:
+            final_score = 0
+        else:
+            final_score = 100 * (
+                distance_score * distance_weight +
+                tariff_score * tariff_weight +
+                university_type_score * university_type_weight +
+                year_abroad_score * year_abroad_weight +
+                course_length_score * course_length_weight
+            ) / total_weight
 
         self.__score = final_score
         return final_score
@@ -195,15 +199,16 @@ class Course:
                     break # break out of the loop once the correct category is found
             if tariff_value is None:
                 tariff_score = 0.5
-            elif tariff_value < 240:
-                tariff_score = tariff_value / 100
-            else:
-                # Handle case where ucas_points is greater than or equal to the highest category value
+
+            elif tariff_value > 224:
+                # Handle case where ucas_points is in the highest category
                 tariff_value = sum([self.__tariffs.get('tariff_'+categories[i]) for i in range(-3, 0)]) / 3
                 if tariff_value:
                     tariff_score = tariff_value / 100
                 else:
                     tariff_score = 0.25
+            else:
+                tariff_score = tariff_value / 100
         else:
             tariff_score = 0.05 # score when the user has not entered grades or the course has no tariff values
         return tariff_score
