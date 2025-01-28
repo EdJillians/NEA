@@ -4,6 +4,55 @@ const showSpinner = () =>
 const hideSpinner = () => 
     document.getElementById("spinner").classList.remove("spinner-visible");
 
+
+
+
+
+let courseLengthWeight = 50;
+document.getElementById('course-length-weight-value').textContent = "" + courseLengthWeight;
+
+const updateCourseLengthWeight = (value) => {
+    courseLengthWeight = value;
+    document.getElementById('course-length-weight-value').textContent = "" + value;
+}
+
+let distanceWeight = 50;
+document.getElementById('distance-weight-value').textContent = "" + distanceWeight;
+
+const updateDistanceWeight = (value) => {
+    distanceWeight = value;
+    document.getElementById('distance-weight-value').textContent = "" + value;
+}
+
+let tariffWeight = 50;
+document.getElementById('tariff-weight-value').textContent = "" + tariffWeight;
+
+const updateTariffWeight = (value) => {
+    tariffWeight = value;
+    document.getElementById('tariff-weight-value').textContent = "" + value;
+}
+
+let universityTypeWeight = 50;
+document.getElementById('university-type-weight-value').textContent = "" + universityTypeWeight;
+
+const updateUniversityTypeWeight = (value) => {
+    universityTypeWeight = value;
+    document.getElementById('university-type-weight-value').textContent = "" + value;
+}
+
+let yearAbroadWeight = 50;
+document.getElementById('year-abroad-weight-value').textContent = "" + yearAbroadWeight;
+
+const updateYearAbroadWeight = (value) => {
+    yearAbroadWeight = value;
+    document.getElementById('year-abroad-weight-value').textContent = "" + value;
+}
+
+
+
+
+
+
 document.addEventListener('DOMContentLoaded', () => {
     // Populate grade dropdowns dynamically
     const grades = ["","A*", "A", "B", "C", "D", "E"];
@@ -62,9 +111,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     search_term: document.getElementById('search-input').value,
                     year_abroad: document.getElementById('year-abroad-checkbox').checked,
                     course_length: parseFloat(document.getElementById('course-length-input').value),
+                    course_length_weight: courseLengthWeight,
                     university_type: document.getElementById('university-type-dropdown').value,
                     postcode: document.getElementById('postcode-input').value,
                     preferred_distance:document.getElementById('distance-dropdown').value,
+                    distance_weight: distanceWeight,
+                    tariff_weight: tariffWeight,
+                    university_type_weight: universityTypeWeight,
+                    year_abroad_weight: yearAbroadWeight,
+                    
+
                     subject: [
                         document.getElementById('subject-dropdown1').value,
                         document.getElementById('subject-dropdown2').value,
@@ -78,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         document.getElementById('grade-dropdown4').value
                     ]
                 })
-            });
+            }); 
 
             if (!response.ok) {
                 alert("An error occurred while fetching the data");
@@ -105,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="university"><span class="label">University: </span><span>${course.university_name}</span></div>
                 <div class="course-length"><span class="label">Course Length: </span><span>${course.course_length}</span></div>
                 <div class="year-abroad"><span class="label">Year Abroad: </span><span>${course.study_abroad}</span></div>
-                <div class="url"><span class="label">URL: </span><a href="${course.url}">${course.course_url}</a></div>
+                <div class="url"><span class="label">URL: </span><a href="${course.course_url}">${course.course_url}</a></div>
                 <div class="distance"><span class="label">Distance: </span><span>${course.distance}</span></div>
                 <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
             </div>`;
