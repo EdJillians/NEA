@@ -56,7 +56,7 @@ class Database: # this class is used to interact with the database
         self.cursor.execute("SELECT course_name FROM course")
         all_course_names = [row[0] for row in self.cursor.fetchall()] # this list comprehension extracts the course names from the fetched rows
         # Find similar course names
-        similar_names = get_close_matches(search_term, all_course_names, cutoff=0.6, n=300) # selects up to 300 closest matches from all course names
+        similar_names = get_close_matches(search_term, all_course_names, cutoff=0.4, n=300) # selects up to 300 closest matches from all course names
         # Create searches for these course names
 
         for name in similar_names: # iterate through the similar course names
@@ -133,11 +133,12 @@ class Course:
         course_length_score = self.__calculate_course_length_score(data) 
 
         # Dynamic weights based on user preferences
-        distance_weight = data.get('distance_weight', 50)
-        tariff_weight = data.get('tariff_weight', 100)
-        university_type_weight = data.get('university_type_weight', 50)
-        year_abroad_weight = data.get('year_abroad_weight', 50)
-        course_length_weight = data.get('course_length_weight', 50)
+        distance_weight = float(data.get('distance_weight', 50))
+        tariff_weight = float(data.get('tariff_weight', 100))
+        university_type_weight = float(data.get('university_type_weight', 50))
+        year_abroad_weight = float(data.get('year_abroad_weight', 50))
+        course_length_weight = float(data.get('course_length_weight', 50))
+        print(distance_weight, tariff_weight, university_type_weight, year_abroad_weight, course_length_weight) 
 
         # Calculate final score
         final_score = (
@@ -157,7 +158,7 @@ class Course:
             if self.__distance == "Invalid postcode":
                 distance_score = 0
             else:
-                preferred_distance = data.get('preferred_distance')
+                preferred_distance = data.get('preferred_distance') # retrieve the user's preferred distance from the data
                 #print(preferred_distance)
                 if preferred_distance == "More than 500" and self.__distance > 500:
                     distance_score = 1
@@ -210,7 +211,7 @@ class Course:
     
     def __calculate_distance(self, data):
         
-        location = data.get("coords")
+        location = data.get("coords") #retrieve the user's location from the data
 
         if not location:
             self.__distance = "Invalid postcode"
@@ -265,7 +266,7 @@ class Course:
     def get_university_id(self):
         return self.__university_id
     
-    def tuck_course(self,other):
+    def tuck_course(self,other): # this method tucks another course into the course
         self.__tucked_courses.append(other)
     
 
@@ -278,7 +279,7 @@ class University:
         self.__longitude = longitude
         self.__latitude = latitude
 
-    def convert_to_json(self):
+    def convert_to_json(self): # this method converts the object into a dictionary that can be converted to JSON
         return {
             "university_id": self.university_id,
             "university_name": self.__university_name,
@@ -327,13 +328,13 @@ class CourseSearchResource(Resource):
             return jsonify([course.convert_to_json() for course in courses])
         abort(404, message="No courses found")
     
-    def post(self):
+    def post(self): # this is the method that is called when a POST request is made to the endpoint it is the main method that is called when the user searches for courses
 
         data = request.get_json()
         if not data or 'search_term' not in data:
             abort(400, message="No search term provided")
         
-        courses = self.db.select_courses(data['search_term'])
+        courses = self.db.select_courses(data['search_term']) 
 
 
         unique_courses = {course.course_id: course for course in courses}.values()
@@ -360,7 +361,13 @@ class CourseSearchResource(Resource):
                     highest_scoring_course.tuck_course(course)
             final_courses.append(highest_scoring_course)
 
-        sorted_courses = sorted(final_courses, key=lambda x: x.display_score(), reverse=True)
+        #t=time.time()
+        #sorted_courses2 = sorted(final_courses, key=lambda x: x.display_score(), reverse=True)
+        #print(time.time()-t)
+        #t=time.time()
+        sorted_courses = self.merge_sort(final_courses)[::-1] # the merge sort is about 5x slower than the built-in sort
+        #print(time.time()-t)
+        
 
 
         if sorted_courses:
@@ -370,8 +377,32 @@ class CourseSearchResource(Resource):
 
 
 
-    def merge_sort(self,unsorted_courses):
-        pass
+    def merge_sort(self, unsorted_courses):
+        if len(unsorted_courses) > 1:
+            half = len(unsorted_courses) // 2
+            left = unsorted_courses[:half]
+            right = unsorted_courses[half:]
+            self.merge_sort(left)
+            self.merge_sort(right)
+            k = j = i = 0
+            while i < len(left) and j < len(right):
+                if left[i].display_score() < right[j].display_score():
+                    unsorted_courses[k] = left[i]
+                    i += 1
+                else:
+                    unsorted_courses[k] = right[j]
+                    j += 1
+                k += 1
+
+            while i < len(left):
+                unsorted_courses[k] = left[i]
+                i += 1
+                k += 1
+            while j < len(right):
+                unsorted_courses[k] = right[j]
+                j += 1
+                k += 1
+        return unsorted_courses
 
 
 
