@@ -68,24 +68,27 @@ class Database: # this class is used to interact with the database
             """, (name,)) # this query selects the course and university data for the course with the current name
             results = self.cursor.fetchall()
             course_description = self.cursor.description
+            
+            self.cursor.execute("""
+            SELECT grade, a_level_subject 
+            FROM requirement
+            WHERE requirement.course_id = %s
+            """, (results[0][0],)) # this query selects the requirements for the course with the current name
+            requirement_results = self.cursor.fetchall()
+            requirements = [{"grade": req[0], "a_level_subject": req[1]} for req in requirement_results]
+            
+            print(results[0][5])
+            self.cursor.execute("""
+            SELECT location_name, latitude, longitude
+            FROM location
+            WHERE university_id = %s
+            """, (results[0][5],)) # this query selects the locations for the university with the current university_id
+            location_results = self.cursor.fetchall()
+            #print(location_results)
+            locations = [{"location_name": loc[0], "latitude": loc[1], "longitude": loc[2]} for loc in location_results] # format the location data into a list of dictionaries
+            #print(locations)
 
             for result in results:
-                self.cursor.execute("""
-                SELECT grade, a_level_subject 
-                FROM requirement
-                WHERE requirement.course_id = %s
-                """, (result[0],)) # this query selects the requirements for the course with the current name
-                requirement_results = self.cursor.fetchall()
-                requirements = [{"grade": req[0], "a_level_subject": req[1]} for req in requirement_results]
-
-                self.cursor.execute("""
-                SELECT location_name, latitude, longitude
-                FROM location
-                WHERE university_id = %s
-                """, (result[5],)) # this query selects the locations for the university with the current university_id
-                location_results = self.cursor.fetchall()
-                locations = [{"location_name": loc[0], "latitude": loc[1], "longitude": loc[2]} for loc in location_results] # format the location data into a list of dictionaries
-
                 course_data = result[:6]  # course_data is a tuple of the first 6 elements of the retrieved row
                 tariffs = dict(zip([desc[0] for desc in course_description[6:20]], result[6:20]))  # this converts the tariffs columns into a dictionary
                 university_data = result[20:26]  # university_data is the next 6 elements of the retrieved row
