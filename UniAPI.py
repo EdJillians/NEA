@@ -68,23 +68,29 @@ class Database: # this class is used to interact with the database
             """, (name,)) # this query selects the course and university data for the course with the current name
             results = self.cursor.fetchall()
             course_description = self.cursor.description
-            self.cursor.execute("""
-            SELECT grade, a_level_subject 
-            FROM requirement
-            WHERE requirement.course_id = %s
-            """, (results[0][0],)) # this query selects the requirements for the course with the current name
-            requirement_results = self.cursor.fetchall()
-            requirements = [{"grade": req[0], "a_level_subject": req[1]} for req in requirement_results]
+
             for result in results:
-                #print(result)
+                self.cursor.execute("""
+                SELECT grade, a_level_subject 
+                FROM requirement
+                WHERE requirement.course_id = %s
+                """, (result[0],)) # this query selects the requirements for the course with the current name
+                requirement_results = self.cursor.fetchall()
+                requirements = [{"grade": req[0], "a_level_subject": req[1]} for req in requirement_results]
+
+                self.cursor.execute("""
+                SELECT location_name, latitude, longitude
+                FROM location
+                WHERE university_id = %s
+                """, (result[5],)) # this query selects the locations for the university with the current university_id
+                location_results = self.cursor.fetchall()
+                locations = [{"location_name": loc[0], "latitude": loc[1], "longitude": loc[2]} for loc in location_results] # format the location data into a list of dictionaries
+
                 course_data = result[:6]  # course_data is a tuple of the first 6 elements of the retrieved row
-                #print(course_data)
                 tariffs = dict(zip([desc[0] for desc in course_description[6:20]], result[6:20]))  # this converts the tariffs columns into a dictionary
-                #print(course_description)
-                #print(tariffs)
                 university_data = result[20:26]  # university_data is the next 6 elements of the retrieved row
-                #print(university_data)
                 university = University(*university_data)  # instantiate a University object
+                university.set_locations(locations)  # set the locations for the university
                 courses.append(Course(*course_data, uni=university, requirements=requirements, **tariffs))  # instantiate a Course object with the course_data tuple, the university object, the requirements, and the tariffs dictionary
         return courses
 
@@ -117,7 +123,9 @@ class Course:
             "score": round(self.__score, 2),
             "distance": round(self.__distance, 2),
             "university_name": self.__university.get_university_name(),
-            "university_type": self.__university.get_university_type()
+            "university_type": self.__university.get_university_type(),
+            "requirements": self.__requirements,
+            "tucked_courses": [course.course_id for course in self.__tucked_courses]
         }
 
 
@@ -138,7 +146,7 @@ class Course:
         university_type_weight = float(data.get('university_type_weight', 50))
         year_abroad_weight = float(data.get('year_abroad_weight', 50))
         course_length_weight = float(data.get('course_length_weight', 50))
-        print(distance_weight, tariff_weight, university_type_weight, year_abroad_weight, course_length_weight) 
+        #print(distance_weight, tariff_weight, university_type_weight, year_abroad_weight, course_length_weight) 
 
         # Calculate final score
         total_weight = distance_weight + tariff_weight + university_type_weight + year_abroad_weight + course_length_weight
@@ -216,16 +224,14 @@ class Course:
     
     def __calculate_distance(self, data):
         
-        location = data.get("coords") #retrieve the user's location from the data
+        user_location = data.get("coords") #retrieve the user's location from the data
 
-        if not location:
+        if not user_location:
             self.__distance = "Invalid postcode"
             return
-        
         university_coords = self.__university.get_university_coordinates()
-        user_coords = (location.latitude, location.longitude)
-
-        
+        #print(university_coords)
+        user_coords = (user_location.latitude, user_location.longitude)
 
         self.__distance = geodesic(user_coords, university_coords).km
         self.__distance = round(self.__distance, 2)
@@ -265,7 +271,7 @@ class Course:
 
     
     def __alter_score(self, multiplier): # this method alters the score of the course by multiplying it by a given value
-        self.__score *= multiplier 
+        self.__score *= multiplier # i dont use this anymore
     def display_score(self): # this method returns the score of the course
         return self.__score
     def get_university_id(self):
@@ -275,14 +281,17 @@ class Course:
         self.__tucked_courses.append(other)
     
 
+
+
+
+
 class University:
-    def __init__(self, university_id, university_name, university_url, university_type, longitude, latitude):
+    def __init__(self, university_id, university_name, university_url, university_type):
         self.university_id = university_id
         self.__university_name = university_name
         self.__university_url = university_url
         self.__university_type = university_type
-        self.__longitude = longitude
-        self.__latitude = latitude
+        self.__locations =[]
 
     def convert_to_json(self): # this method converts the object into a dictionary that can be converted to JSON
         return {
@@ -290,13 +299,18 @@ class University:
             "university_name": self.__university_name,
             "university_url": self.__university_url,
             "university_type": self.__university_type,
-            "longitude": self.__longitude,
-            "latitude": self.__latitude
         }
+    
+    def set_locations(self, locations): # this method sets the locations for the university
+        self.__locations = locations
+
+
     def get_university_type(self):
         return self.__university_type
     def get_university_coordinates(self):
-        return (self.__latitude, self.__longitude)
+        #print(self.__locations[0]["latitude"], self.__locations[0]["longitude"])
+        return (self.__locations[0]["latitude"], self.__locations[0]["longitude"])
+        #return self.__locations
     def get_university_name(self):
         return self.__university_name
 
