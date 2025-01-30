@@ -5,7 +5,8 @@ const hideSpinner = () =>
     document.getElementById("spinner").classList.remove("spinner-visible");
 
 
-
+const showOtherCourses = () =>
+    pass
 
 
 let courseLengthWeight = 50;
@@ -156,7 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (let i = 0; i < json.length; i++) {
             const course = json[i];
-            results.innerHTML += `<div class="result-box">
+            const resultBox = document.createElement('div');
+            resultBox.className = 'result-box';
+            resultBox.innerHTML = `
                 <div class="name"><span class="label">Name: </span><span>${course.course_name}</span></div>
                 <div class="university"><span class="label">University: </span><span>${course.university_name}</span></div>
                 <div class="course-length"><span class="label">Course Length: </span><span>${course.course_length}</span></div>
@@ -164,7 +167,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="url"><span class="label">URL: </span><a href="${course.course_url}">${course.course_url}</a></div>
                 <div class="distance"><span class="label">Distance: </span><span>${course.distance}</span></div>
                 <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
-            </div>`;
+                <button class="dismiss-btn">Dismiss</button>
+                
+            `;
+            //<button class="other-courses-btn" id="other-courses-btn">Other Courses</button>
+            results.appendChild(resultBox);
+        
+            const dismissBtn = resultBox.querySelector('.dismiss-btn');
+            dismissBtn.addEventListener('click', () => {
+                resultBox.remove();
+            });
+
+            // const otherCoursesBtn = document.getElementById('other-courses-btn');
+            // otherCoursesBtn.addEventListener('click', () => {
+            //     resultBox. = `<div class="Other Courses"><span class="label">Other Courses: </span><span>${course.tucked_courses}</span></div>`;
+            // });
         }
     });
 });

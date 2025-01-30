@@ -12,8 +12,10 @@ def main():
         create_tables(conn)
         university_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/INSTITUTION.csv', 'university')
         course_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/KISCOURSE.csv', 'course')
+        location_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/LOCATION.csv', 'location')
         load_csv(conn, university_csv, 'university')
         load_csv(conn, course_csv, 'course')
+        load_csv(conn, location_csv, 'location')
         populate_requirement(conn)
         alter_university_types(conn)
 
@@ -78,12 +80,22 @@ def create_tables(conn):
             "university_id" VARCHAR(255) NOT NULL,
             "university_name" VARCHAR(255) NOT NULL,
             "university_url" VARCHAR(255),
-            "university_type" VARCHAR(255) NOT NULL,
+            "university_type" VARCHAR(255) NOT NULL
+        );
+        ALTER TABLE
+            "university" ADD PRIMARY KEY("university_id");
+
+        CREATE TABLE "location"(
+            "location_id" VARCHAR(255) NOT NULL,
+            "university_id" VARCHAR(255) NOT NULL,
+            "location_name" VARCHAR(255) NOT NULL,
             "longitude" FLOAT(53),
             "latitude" FLOAT(53)
         );
         ALTER TABLE
-            "university" ADD PRIMARY KEY("university_id");
+            "location" ADD PRIMARY KEY("location_id");
+                                      
+        
 
         CREATE TABLE "course"(
             "course_id" VARCHAR(255) NOT NULL,
@@ -135,21 +147,21 @@ def load_csv(conn, file_path, table_name):
                     )
                     conn.commit()
                 except Exception as e:
-                    print(f"Error inserting row {row}: {type(e).__name__} - {e}")
+                    #print(f"Error inserting row {row}: {type(e).__name__} - {e}")
                     conn.rollback()
 
 def clean_csv(file_path, table_name): # this function cleans the csv files and returns the cleaned csv files
     if table_name == 'university':
         file1 = f'{NEA_FOLDER_PATH}dataset/INSTITUTION.csv'
-        file2 = f'{NEA_FOLDER_PATH}dataset/LOCATION.csv'
+        #file2 = f'{NEA_FOLDER_PATH}dataset/LOCATION.csv'
         df1 = pd.read_csv(file1)
-        df2 = pd.read_csv(file2)
+        #df2 = pd.read_csv(file2)
         df1['TYPE'] = 'campus' # this sets all universities to campus type as there is no data for this
-        merged_df = pd.merge(df1, df2, on='UKPRN', how='left')
+        #merged_df = pd.merge(df1, df2, on='UKPRN', how='left')
         columns_to_keep1 = [
-            'UKPRN', 'LEGAL_NAME', 'PROVURL', 'TYPE', 'LATITUDE', 'LONGITUDE'
+            'UKPRN', 'LEGAL_NAME', 'PROVURL', 'TYPE'
         ]
-        cleaned_df = merged_df[columns_to_keep1]
+        cleaned_df = df1[columns_to_keep1]
         cleaned_df = cleaned_df.dropna(subset=['UKPRN'])
         cleaned_df = cleaned_df.drop_duplicates(subset=['UKPRN'], keep='first')
         cleaned_df = cleaned_df.rename(columns={
@@ -157,12 +169,30 @@ def clean_csv(file_path, table_name): # this function cleans the csv files and r
             'LEGAL_NAME': 'university_name',
             'PROVURL': 'university_url',
             'TYPE': 'university_type',
-            'LATITUDE': 'latitude',
-            'LONGITUDE': 'longitude'
         })
         output_file = f'{NEA_FOLDER_PATH}cleaned_UNIVERSITY.csv'
         cleaned_df.to_csv(output_file, index=False)
         return output_file
+    
+
+    elif table_name == 'location':
+        file5 = f'{NEA_FOLDER_PATH}dataset/LOCATION.csv'
+        df5 = pd.read_csv(file5)
+        columns_to_keep2 = ['UKPRN','LOCNAME', 'LONGITUDE', 'LATITUDE']
+        cleaned_df = df5[columns_to_keep2]
+        cleaned_df = cleaned_df.dropna(subset=['UKPRN'])
+        cleaned_df["location_id"]=cleaned_df.apply(lambda row: f"{row['UKPRN']}_{row['LOCNAME']}", axis=1)
+        cleaned_df = cleaned_df.rename(columns={
+            'UKPRN': 'university_id',
+            'LOCNAME': 'location_name',
+            'LONGITUDE': 'longitude',
+            'LATITUDE': 'latitude',
+        })
+        output_file = f'{NEA_FOLDER_PATH}cleaned_LOCATION.csv'
+        cleaned_df.to_csv(output_file, index=False)
+        return output_file
+
+
 
     elif table_name == 'course':
         file3 = f'{NEA_FOLDER_PATH}dataset/KISCOURSE.csv'
@@ -213,25 +243,22 @@ def drop_tables(conn):
         DROP TABLE IF EXISTS "requirement" CASCADE;
         DROP TABLE IF EXISTS "university" CASCADE;
         DROP TABLE IF EXISTS "course" CASCADE;
+        DROP TABLE IF EXISTS "location" CASCADE;
         """)
         conn.commit()
 
 def populate_requirement(conn):
     with conn.cursor() as cur:
         cur.execute("""
-                    INSERT INTO requirement (course_id, grade, a_level_subject) VALUES ('2571192_10007798_10007798_4.0_1', 'A', 'Mathematics'
+                    INSERT INTO requirement (course_id, grade, a_level_subject) VALUES ('2571192_10007798_10007798_4.0_1', 'A', 'Mathematics');
         """)
-        grades=['A*','A', 'B', 'C', 'D',]
-        counter=0
-        while True:
-            cur.execute("""
-                        INSERT INTO requirement (SELECT course_id FROM course WHERE course_name = 'Mathematics' LIMIT 1, grades[counter], 'Mathematics')
-                        """)
-            counter+=1
-
-
-
-
+        # grades=['A*','A', 'B', 'C', 'D',]
+        # counter=0
+        # while True:
+        #     cur.execute("""
+        #                 INSERT INTO requirement (SELECT course_id FROM course WHERE course_name = 'Mathematics' LIMIT 1, grades[counter], 'Mathematics')
+        #                 """)
+        #     counter+=1
         conn.commit()
 
 
