@@ -50,54 +50,58 @@ class Database: # this class is used to interact with the database
     #     self.connection.close()
     
     
-    def select_courses(self, search_term): # selects possible relevant courses from the database
-        courses = []
-        # Fetch all course names from the database
+
+
+    def select_courses(self, search_term):
+        """Finds courses matching the search term and retrieves relevant details."""
+        
+        # Retrieve all course names from the database
         self.cursor.execute("SELECT course_name FROM course")
-        all_course_names = [row[0] for row in self.cursor.fetchall()] # this list comprehension extracts the course names from the fetched rows
-        # Find similar course names
-        similar_names = get_close_matches(search_term, all_course_names, cutoff=0.54, n=300) # selects up to 300 closest matches from all course names
-        # Create searches for these course names
+        all_course_names = [row[0] for row in self.cursor.fetchall()]
 
-        for name in similar_names: # iterate through the similar course names
-            self.cursor.execute(""" 
-            SELECT course.*, university.*
-            FROM course
-            JOIN university ON course.university_id = university.university_id
-            WHERE course.course_name = %s
-            """, (name,)) # this query selects the course and university data for the course with the current name
-            results = self.cursor.fetchall()
-            course_description = self.cursor.description
-            
-            self.cursor.execute("""
-            SELECT grade, a_level_subject 
-            FROM requirement
-            WHERE requirement.course_id = %s
-            """, (results[0][0],)) # this query selects the requirements for the course with the current name
-            requirement_results = self.cursor.fetchall()
-            requirements = [{"grade": req[0], "a_level_subject": req[1]} for req in requirement_results]
-            
-            print(results[0][5])
-            self.cursor.execute("""
-            SELECT location_name, latitude, longitude
-            FROM location
-            WHERE university_id = %s
-            """, (results[0][5],)) # this query selects the locations for the university with the current university_id
-            location_results = self.cursor.fetchall()
-            #print(location_results)
-            locations = [{"location_name": loc[0], "latitude": loc[1], "longitude": loc[2]} for loc in location_results] # format the location data into a list of dictionaries
-            #print(locations)
+        # Find the closest matches to the search term
+        similar_names = get_close_matches(search_term, all_course_names, n=300, cutoff=0.5)
+        if not similar_names:
+            return []  # Return an empty list if no matches found
 
-            for result in results:
-                course_data = result[:6]  # course_data is a tuple of the first 6 elements of the retrieved row
-                tariffs = dict(zip([desc[0] for desc in course_description[6:20]], result[6:20]))  # this converts the tariffs columns into a dictionary
-                university_data = result[20:26]  # university_data is the next 6 elements of the retrieved row
-                university = University(*university_data)  # instantiate a University object
-                university.set_locations(locations)  # set the locations for the university
-                courses.append(Course(*course_data, uni=university, requirements=requirements, **tariffs))  # instantiate a Course object with the course_data tuple, the university object, the requirements, and the tariffs dictionary
+        # Fetch matching course details
+        placeholders = ", ".join(["%s"] * len(similar_names))
+        query = f"""
+            SELECT c.course_id, c.course_name, c.course_url, c.course_length, c.study_abroad, c.university_id, u.university_name, u.university_type
+            FROM course c
+            JOIN university u ON c.university_id = u.university_id
+            WHERE c.course_name IN ({placeholders})
+        """
+        self.cursor.execute(query, tuple(similar_names))
+        results = self.cursor.fetchall()
+
+        courses = []
+        for row in results:
+            course_id, course_name, course_url, course_length, study_abroad, university_id, university_name, university_type = row
+
+            # Retrieve course tariffs
+            self.cursor.execute("SELECT * FROM course WHERE course_id = %s", (course_id,))
+            course_row = self.cursor.fetchone()
+            tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], course_row[6:]))
+
+            # Retrieve course requirements
+            self.cursor.execute("SELECT requirement FROM requirement WHERE course_id = %s", (course_id,))
+            requirements = [req[0] for req in self.cursor.fetchall()]
+
+            # Retrieve university locations
+            self.cursor.execute("SELECT latitude, longitude FROM location WHERE university_id = %s", (university_id,))
+            locations = [{"latitude": loc[0], "longitude": loc[1]} for loc in self.cursor.fetchall()]
+            if not locations:
+                locations = [{"latitude": 0, "longitude": 0}]  # Default value if no locations exist
+
+            # Create University and Course objects
+            university = University(university_id, university_name, "", university_type)
+            university.set_locations(locations)
+            course = Course(course_id, course_name, course_url, course_length, study_abroad, university_id, university, requirements, **tariffs)
+
+            courses.append(course)
+
         return courses
-
-
 
 class Course:
     def __init__(self, course_id, course_name, course_url, course_length, study_abroad, university_id, uni ,requirements,**tariffs):
