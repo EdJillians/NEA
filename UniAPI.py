@@ -1,11 +1,11 @@
-from flask import Flask, jsonify, request, render_template
-from flask_restful import Api, Resource, abort
-import psycopg2 as psycopg
-from difflib import get_close_matches
+from flask import Flask, jsonify, request, render_template # this is used to create the web app
+from flask_restful import Api, Resource, abort # this is used to create the API
+import psycopg2 as psycopg # this is used to interact with the database
+from difflib import get_close_matches # this is used to find the closest matches to a search term
 
-from geopy.distance import geodesic
-from geopy.geocoders import Nominatim
-import time
+from geopy.distance import geodesic # this is used to calculate the distance between two coordinates
+from geopy.geocoders import Nominatim # this is used to convert postcodes to coordinates
+import time # used for testing
 
 
 app = Flask(__name__,static_url_path='/static') # this creates a Flask app
@@ -16,7 +16,7 @@ class Database: # this class is used to interact with the database
         self.connection = psycopg.connect("dbname=University user=postgres password=P9@ndalfos")
         self.cursor = self.connection.cursor()
 
-    def get_course(self, course_id): # redundant
+    def get_course(self, course_id): # redundant but was used for the CourseResource class
         self.cursor.execute("SELECT * FROM course WHERE course_id = %s", (course_id,))
         result = self.cursor.fetchone()
         if result:
@@ -25,7 +25,7 @@ class Database: # this class is used to interact with the database
         return Course(*course_data, **tariffs)
         
 
-    def get_university(self, university_id): 
+    def get_university(self, university_id): # redundant but was used for the UniversityResource class
         self.cursor.execute("SELECT * FROM university WHERE university_id = %s", (university_id,))
         result = self.cursor.fetchone()
         if result:
@@ -129,19 +129,18 @@ class Course:
             **self.__tariffs,
             "score": round(self.__score, 2),
             "distance": round(self.__distance, 2),
-            "university_name": self.__university.get_university_name(),
-            "university_type": self.__university.get_university_type(),
+            "university_name": self.__university.get_university_name(), # this is the name of the university that the course belongs to
+            "university_type": self.__university.get_university_type(), # this is the type of the university that the course belongs to
             "requirements": self.__requirements,
-            "tucked_courses": [course.course_id for course in self.__tucked_courses]
+            "tucked_courses": [course.convert_to_json() for course in self.__tucked_courses] # this is a list of the courses that have been tucked into this course
         }
 
 
 
 
-
     def calculate_score(self, data):
-        # Normalize scores
-        distance_score = self.__calculate_distance_score(data)
+        # calculate scores
+        distance_score = self.__calculate_distance_score(data) #
         tariff_score = self.__calculate_tariff_score(data) 
         university_type_score = self.__calculate_university_type_score(data) 
         year_abroad_score = self.__calculate_year_abroad_score(data) 
@@ -293,12 +292,12 @@ class Course:
 
 
 class University:
-    def __init__(self, university_id, university_name, university_url, university_type):
+    def __init__(self, university_id, university_name, university_url, university_type): # this is the constructor for the University class
         self.university_id = university_id
         self.__university_name = university_name
         self.__university_url = university_url
         self.__university_type = university_type
-        self.__locations =[]
+        self.__locations =[] # this is a list of dictionaries containing the locations of the university
 
     def convert_to_json(self): # this method converts the object into a dictionary that can be converted to JSON
         return {
@@ -321,7 +320,7 @@ class University:
     def get_university_name(self):
         return self.__university_name
 
-class CourseResource(Resource):
+class CourseResource(Resource): # this is the class that is used to get course details it is not currently used
     def get(self, course_id):
         db = Database()
         course = db.get_course(course_id)
@@ -330,7 +329,7 @@ class CourseResource(Resource):
         abort(404, message="Course not found")
 
 
-class UniversityResource(Resource):
+class UniversityResource(Resource): # this is the class that is used to get university details it is not currently used
     def get(self, university_id):
         db = Database()
         university = db.get_university(university_id)
@@ -338,13 +337,13 @@ class UniversityResource(Resource):
             return jsonify(university.convert_to_json())
         abort(404, message="University not found")
 
-class CourseSearchResource(Resource):
+class CourseSearchResource(Resource): # this is the class that is used to search for courses
     def __init__(self):
         self.db=Database()
 
 
 
-    def get(self):
+    def get(self): # this is the get method that is not currently used
         course_name = request.args.get('course_name')
         if not course_name:
             abort(400, message="Course name is required")
@@ -411,13 +410,13 @@ class CourseSearchResource(Resource):
             left = unsorted_courses[:mid]
             right = unsorted_courses[mid:]
 
-            left = self.merge_sort(left)
-            right = self.merge_sort(right)
+            left = self.merge_sort(left) #calls itself recursively to sort the left side
+            right = self.merge_sort(right) #calls itself recursively to sort the right side
 
-            return self.merge(left, right)
+            return self.merge(left, right) #merges the left and right sides
 
     
-    def merge(self, left, right):
+    def merge(self, left, right): # this method merges the left and right sides of the list
         result = []
         left_index = 0
         right_index = 0
@@ -433,7 +432,7 @@ class CourseSearchResource(Resource):
         result += left[left_index:]
         result += right[right_index:]
 
-        return result
+        return result # returns the merged list
 
 
 
