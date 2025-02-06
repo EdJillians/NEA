@@ -60,7 +60,7 @@ class Database: # this class is used to interact with the database
         all_course_names = [row[0] for row in self.cursor.fetchall()]
 
         # Find the closest matches to the search term
-        similar_names = get_close_matches(search_term, all_course_names, n=300, cutoff=0.5)
+        similar_names = get_close_matches(search_term, all_course_names, n=300, cutoff=0.6)
         if not similar_names:
             return []  # Return an empty list if no matches found
 
@@ -132,7 +132,7 @@ class Course:
             "university_name": self.__university.get_university_name(),
             "university_type": self.__university.get_university_type(),
             "requirements": self.__requirements,
-            "tucked_courses": [course.course_id for course in self.__tucked_courses]
+            "tucked_courses": [course.convert_to_json() for course in self.__tucked_courses]
         }
 
 
@@ -404,37 +404,31 @@ class CourseSearchResource(Resource):
 
 
     def merge_sort(self, unsorted_courses):
-        if len(unsorted_courses) <= 1:
-            return unsorted_courses
-        else:
-            mid = len(unsorted_courses) // 2
-            left = unsorted_courses[:mid]
-            right = unsorted_courses[mid:]
+        if len(unsorted_courses) > 1:
+            half = len(unsorted_courses) // 2
+            left = unsorted_courses[:half]
+            right = unsorted_courses[half:]
+            self.merge_sort(left)
+            self.merge_sort(right)
+            k = j = i = 0
+            while i < len(left) and j < len(right):
+                if left[i].display_score() < right[j].display_score():
+                    unsorted_courses[k] = left[i]
+                    i += 1
+                else:
+                    unsorted_courses[k] = right[j]
+                    j += 1
+                k += 1
 
-            left = self.merge_sort(left)
-            right = self.merge_sort(right)
-
-            return self.merge(left, right)
-
-    
-    def merge(self, left, right):
-        result = []
-        left_index = 0
-        right_index = 0
-
-        while left_index < len(left) and right_index < len(right):
-            if left[left_index].display_score() < right[right_index].display_score():
-                result.append(left[left_index])
-                left_index += 1
-            else:
-                result.append(right[right_index])
-                right_index += 1
-
-        result += left[left_index:]
-        result += right[right_index:]
-
-        return result
-
+            while i < len(left):
+                unsorted_courses[k] = left[i]
+                i += 1
+                k += 1
+            while j < len(right):
+                unsorted_courses[k] = right[j]
+                j += 1
+                k += 1
+        return unsorted_courses
 
 
 

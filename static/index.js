@@ -1,3 +1,6 @@
+
+const LOCAL_STORAGE_KEY = 'universityCourseSearch';
+
 const showSpinner = () => 
     document.getElementById("spinner").classList.add("spinner-visible");
 
@@ -8,6 +11,13 @@ const hideSpinner = () =>
 const showOtherCourses = () =>
     pass
 
+// Initialise the form:
+const formString = localStorage.getItem(LOCAL_STORAGE_KEY);
+console.log(formString);
+if (formString) {
+    const form = JSON.parse(formString);
+    document.getElementById('search-input').value = form.course;
+}
 
 let courseLengthWeight = 50;
 document.getElementById('course-length-weight-value').textContent = "" + courseLengthWeight;
@@ -49,10 +59,27 @@ const updateYearAbroadWeight = (value) => {
     document.getElementById('year-abroad-weight-value').textContent = "" + value;
 }
 
+const courseChanged = (value) => {
+    console.log('Changed to: ' + value);
+    form = {
+        course: value,
+    }
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(form));
+}
 
+const getTuckedCourses = (courses) => {
 
+    if (courses.length === 0) {
+        return '';
+    }
 
-
+    let string = "<div><strong>Other Courses:</strong></div><ul>";
+    for (const course of courses) {
+        string += '<li>' + course.course_name + ' (' + course.course_length + ' years)</li>'
+    }
+    string += "</ul>";
+    return string;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     // Populate grade dropdowns dynamically
@@ -90,12 +117,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-
-
-
-
     // Search button event listener
     document.getElementById('search-button').addEventListener('click', async () => {
+        
+        // Store the form in local storage to restore it when the page is reloaded
+        form = {
+            course: document.getElementById('search-input').value,
+        }
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(form));
+                
         const resourceUrl = 'http://127.0.0.1:5000/courses/search';
 
         let response, json;
@@ -109,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    search_term: document.getElementById('search-input').value,
+                    search_term: form.course,
                     year_abroad: document.getElementById('year-abroad-checkbox').checked,
                     course_length: parseFloat(document.getElementById('course-length-input').value),
                     course_length_weight: courseLengthWeight,
@@ -167,6 +197,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="url"><span class="label">URL: </span><a href="${course.course_url}">${course.course_url}</a></div>
                 <div class="distance"><span class="label">Distance: </span><span>${course.distance}</span></div>
                 <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
+                <div class="tucked-courses"><span>${
+                    getTuckedCourses(course.tucked_courses)
+                }</span></div>            
                 <button class="dismiss-btn">Dismiss</button>
                 
             `;
