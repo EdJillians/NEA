@@ -21,7 +21,7 @@ def main():
 
     pass
 
-def create_database():
+def create_database(): # this function creates the database
     """
     Creates a PostgreSQL database named 'University'.
     Requires a PostgreSQL server to be running and accessible.
