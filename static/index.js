@@ -1,4 +1,3 @@
-
 const LOCAL_STORAGE_KEY = 'universityCourseSearch';
 
 const showSpinner = () => 
@@ -7,81 +6,60 @@ const showSpinner = () =>
 const hideSpinner = () => 
     document.getElementById("spinner").classList.remove("spinner-visible");
 
+// Load form data from local storage or use default values
+const loadForm = () => {
+    const storedForm = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return storedForm ? JSON.parse(storedForm) : {
+        course: '',
+        year_abroad: false,
+        course_length: '3',
+        course_length_weight: 50,
+        university_type: 'campus',
+        postcode: '',
+        preferred_distance: '',
+        distance_weight: 50,
+        tariff_weight: 50,
+        university_type_weight: 50,
+        year_abroad_weight: 50,
+        subject: ['', '', '', ''],
+        grades: ['', '', '', '']
+    };
+};
 
-const showOtherCourses = () =>
-    pass
-
-// Initialise the form:
-const formString = localStorage.getItem(LOCAL_STORAGE_KEY);
-console.log(formString);
-if (formString) {
-    const form = JSON.parse(formString);
-    document.getElementById('search-input').value = form.course;
-}
-
-let courseLengthWeight = 50;
-document.getElementById('course-length-weight-value').textContent = "" + courseLengthWeight;
-
-const updateCourseLengthWeight = (value) => {
-    courseLengthWeight = value;
-    document.getElementById('course-length-weight-value').textContent = "" + value;
-}
-
-let distanceWeight = 50;
-document.getElementById('distance-weight-value').textContent = "" + distanceWeight;
-
-const updateDistanceWeight = (value) => {
-    distanceWeight = value;
-    document.getElementById('distance-weight-value').textContent = "" + value;
-}
-
-let tariffWeight = 50;
-document.getElementById('tariff-weight-value').textContent = "" + tariffWeight;
-
-const updateTariffWeight = (value) => {
-    tariffWeight = value;
-    document.getElementById('tariff-weight-value').textContent = "" + value;
-}
-
-let universityTypeWeight = 50;
-document.getElementById('university-type-weight-value').textContent = "" + universityTypeWeight;
-
-const updateUniversityTypeWeight = (value) => {
-    universityTypeWeight = value;
-    document.getElementById('university-type-weight-value').textContent = "" + value;
-}
-
-let yearAbroadWeight = 50;
-document.getElementById('year-abroad-weight-value').textContent = "" + yearAbroadWeight;
-
-const updateYearAbroadWeight = (value) => {
-    yearAbroadWeight = value;
-    document.getElementById('year-abroad-weight-value').textContent = "" + value;
-}
-
-const courseChanged = (value) => {
-    console.log('Changed to: ' + value);
-    form = {
-        course: value,
-    }
+// Save form data to local storage
+const saveFormToLocalStorage = () => {
+    const form = {
+        course: document.getElementById('search-input').value,
+        year_abroad: document.getElementById('year-abroad-checkbox').checked,
+        course_length: document.getElementById('course-length-input').value,
+        course_length_weight: document.getElementById('course-length-weight-slider').value,
+        university_type: document.getElementById('university-type-dropdown').value,
+        postcode: document.getElementById('postcode-input').value,
+        preferred_distance: document.getElementById('distance-dropdown').value,
+        distance_weight: document.getElementById('distance-weight-slider').value,
+        tariff_weight: document.getElementById('tariff-weight-slider').value,
+        university_type_weight: document.getElementById('university-type-weight-slider').value,
+        year_abroad_weight: document.getElementById('year-abroad-weight-slider').value,
+        subject: [
+            document.getElementById('subject-dropdown1').value,
+            document.getElementById('subject-dropdown2').value,
+            document.getElementById('subject-dropdown3').value,
+            document.getElementById('subject-dropdown4').value
+        ],
+        grades: [
+            document.getElementById('grade-dropdown1').value,
+            document.getElementById('grade-dropdown2').value,
+            document.getElementById('grade-dropdown3').value,
+            document.getElementById('grade-dropdown4').value
+        ]
+    };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(form));
-}
+};
 
-const getTuckedCourses = (courses) => {
-
-    if (courses.length === 0) {
-        return '';
-    }
-
-    let string = "<div><strong>Other Courses:</strong></div><ul>";
-    for (const course of courses) {
-        string += '<li>' + course.course_name + ' (' + course.course_length + ' years)</li>'
-    }
-    string += "</ul>";
-    return string;
-}
-
+// Populate form with saved values
 document.addEventListener('DOMContentLoaded', () => {
+    const form = loadForm();
+
     // Populate grade dropdowns dynamically
     const grades = ["","A*", "A", "B", "C", "D", "E"];
     for (let i = 1; i <= 4; i++) {
@@ -117,104 +95,97 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-    // Search button event listener
-    document.getElementById('search-button').addEventListener('click', async () => {
-        
-        // Store the form in local storage to restore it when the page is reloaded
-        form = {
-            course: document.getElementById('search-input').value,
-        }
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(form));
-                
-        const resourceUrl = 'http://127.0.0.1:5000/courses/search';
 
-        let response, json;
-        try {
-            //alert("Fetching data...");
-            showSpinner();
 
-            response = await fetch(resourceUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    search_term: form.course,
-                    year_abroad: document.getElementById('year-abroad-checkbox').checked,
-                    course_length: parseFloat(document.getElementById('course-length-input').value),
-                    course_length_weight: courseLengthWeight,
-                    university_type: document.getElementById('university-type-dropdown').value,
-                    postcode: document.getElementById('postcode-input').value,
-                    preferred_distance:document.getElementById('distance-dropdown').value,
-                    distance_weight: distanceWeight,
-                    tariff_weight: tariffWeight,
-                    university_type_weight: universityTypeWeight,
-                    year_abroad_weight: yearAbroadWeight,
-                    
 
-                    subject: [
-                        document.getElementById('subject-dropdown1').value,
-                        document.getElementById('subject-dropdown2').value,
-                        document.getElementById('subject-dropdown3').value,
-                        document.getElementById('subject-dropdown4').value
-                    ],
-                    grades: [
-                        document.getElementById('grade-dropdown1').value,
-                        document.getElementById('grade-dropdown2').value,
-                        document.getElementById('grade-dropdown3').value,
-                        document.getElementById('grade-dropdown4').value
-                    ]
-                })
-            }); 
+    document.getElementById('search-input').value = form.course;
+    document.getElementById('year-abroad-checkbox').checked = form.year_abroad;
+    document.getElementById('course-length-input').value = form.course_length || '';
+    document.getElementById('university-type-dropdown').value = form.university_type;
+    if (form.postcode){
+        document.getElementById('postcode-input').value = form.postcode;
+    }
+    
+    document.getElementById('distance-dropdown').value = form.preferred_distance;
 
-            if (!response.ok) {
-                alert("An error occurred while fetching the data");
-                hideSpinner();
-                return;
-            }
+    if(form.subject && form.subject.length == 4) {
+        document.getElementById('subject-dropdown1').value = form.subject[0];
+        document.getElementById('subject-dropdown2').value = form.subject[1];
+        document.getElementById('subject-dropdown3').value = form.subject[2];
+        document.getElementById('subject-dropdown4').value = form.subject[3];
+    }
+    
+    if (form.grades && form.grades.length == 4) {
+        document.getElementById('grade-dropdown1').value = form.grades[0];
+        document.getElementById('grade-dropdown2').value = form.grades[1];
+        document.getElementById('grade-dropdown3').value = form.grades[2];
+        document.getElementById('grade-dropdown4').value = form.grades[3];
+    }
 
-            json = await response.json();
-        } catch (error) {
-            alert("An error occurred: " + error.message);
+    document.getElementById('course-length-weight-slider').value = form.course_length_weight;
+    document.getElementById('distance-weight-slider').value = form.distance_weight;
+    document.getElementById('tariff-weight-slider').value = form.tariff_weight;
+    document.getElementById('university-type-weight-slider').value = form.university_type_weight;
+    document.getElementById('year-abroad-weight-slider').value = form.year_abroad_weight;
+});
+
+// Save form when any input changes
+document.querySelectorAll('input, select').forEach(element => {
+    element.addEventListener('change', saveFormToLocalStorage);
+});
+
+// Search button event listener
+document.getElementById('search-button').addEventListener('click', async () => {
+    saveFormToLocalStorage();
+    const form = loadForm();
+
+    const resourceUrl = 'http://127.0.0.1:5000/courses/search';
+
+    let response, json;
+    try {
+        showSpinner();
+
+        response = await fetch(resourceUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(form)
+        });
+
+        if (!response.ok) {
+            alert("An error occurred while fetching the data");
             hideSpinner();
             return;
         }
 
+        json = await response.json();
+    } catch (error) {
+        alert("An error occurred: " + error.message);
         hideSpinner();
+        return;
+    }
 
-        const results = document.getElementById('results');
-        results.innerHTML = '';
+    hideSpinner();
+    const results = document.getElementById('results');
+    results.innerHTML = '';
 
-        for (let i = 0; i < json.length; i++) {
-            const course = json[i];
-            const resultBox = document.createElement('div');
-            resultBox.className = 'result-box';
-            resultBox.innerHTML = `
-                <div class="name"><span class="label">Name: </span><span>${course.course_name}</span></div>
-                <div class="university"><span class="label">University: </span><span>${course.university_name}</span></div>
-                <div class="course-length"><span class="label">Course Length: </span><span>${course.course_length}</span></div>
-                <div class="year-abroad"><span class="label">Year Abroad: </span><span>${course.study_abroad}</span></div>
-                <div class="url"><span class="label">URL: </span><a href="${course.course_url}">${course.course_url}</a></div>
-                <div class="distance"><span class="label">Distance: </span><span>${course.distance}</span></div>
-                <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
-                <div class="tucked-courses"><span>${
-                    getTuckedCourses(course.tucked_courses)
-                }</span></div>            
-                <button class="dismiss-btn">Dismiss</button>
-                
-            `;
-            //<button class="other-courses-btn" id="other-courses-btn">Other Courses</button>
-            results.appendChild(resultBox);
-        
-            const dismissBtn = resultBox.querySelector('.dismiss-btn');
-            dismissBtn.addEventListener('click', () => {
-                resultBox.remove();
-            });
+    json.forEach(course => {
+        const resultBox = document.createElement('div');
+        resultBox.className = 'result-box';
+        resultBox.innerHTML = `
+            <div class="name"><span class="label">Name: </span><span>${course.course_name}</span></div>
+            <div class="university"><span class="label">University: </span><span>${course.university_name}</span></div>
+            <div class="course-length"><span class="label">Course Length: </span><span>${course.course_length}</span></div>
+            <div class="year-abroad"><span class="label">Year Abroad: </span><span>${course.study_abroad}</span></div>
+            <div class="url"><span class="label">URL: </span><a href="${course.course_url}">${course.course_url}</a></div>
+            <div class="distance"><span class="label">Distance: </span><span>${course.distance}</span></div>
+            <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
+            <button class="dismiss-btn">Dismiss</button>
+        `;
 
-            // const otherCoursesBtn = document.getElementById('other-courses-btn');
-            // otherCoursesBtn.addEventListener('click', () => {
-            //     resultBox. = `<div class="Other Courses"><span class="label">Other Courses: </span><span>${course.tucked_courses}</span></div>`;
-            // });
-        }
+        results.appendChild(resultBox);
+
+        resultBox.querySelector('.dismiss-btn').addEventListener('click', () => {
+            resultBox.remove();
+        });
     });
 });

@@ -1,11 +1,13 @@
-from flask import Flask, jsonify, request, render_template
-from flask_restful import Api, Resource, abort
-import psycopg2 as psycopg
-from difflib import get_close_matches
+from flask import Flask, jsonify, request, render_template # this is used to create the web app
+from flask_restful import Api, Resource, abort # this is used to create the API
+import psycopg2 as psycopg # this is used to interact with the database
 
-from geopy.distance import geodesic
-from geopy.geocoders import Nominatim
-import time
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+from geopy.distance import geodesic # this is used to calculate the distance between two coordinates
+from geopy.geocoders import Nominatim # this is used to convert postcodes to coordinates
+import time # used for testing
 
 
 app = Flask(__name__,static_url_path='/static') # this creates a Flask app
@@ -16,7 +18,7 @@ class Database: # this class is used to interact with the database
         self.connection = psycopg.connect("dbname=University user=postgres password=P9@ndalfos")
         self.cursor = self.connection.cursor()
 
-    def get_course(self, course_id): # redundant
+    def get_course(self, course_id): # redundant but was used for the CourseResource class
         self.cursor.execute("SELECT * FROM course WHERE course_id = %s", (course_id,))
         result = self.cursor.fetchone()
         if result:
@@ -25,44 +27,48 @@ class Database: # this class is used to interact with the database
         return Course(*course_data, **tariffs)
         
 
-    def get_university(self, university_id): 
+    def get_university(self, university_id): # redundant but was used for the UniversityResource class
         self.cursor.execute("SELECT * FROM university WHERE university_id = %s", (university_id,))
         result = self.cursor.fetchone()
         if result:
             return University(*result)
         return None
-
-    # def search_courses(self, course_name, course_length=None, limit=5): # shouldnt be used
-    #     if course_length:
-    #         self.cursor.execute("SELECT * FROM course WHERE course_name LIKE %s AND course_length = %s LIMIT %s", ('%' + course_name + '%', course_length, limit))
-    #     else:
-    #         self.cursor.execute("SELECT * FROM course WHERE course_name LIKE %s LIMIT %s", ('%' + course_name + '%', limit))
-    #     results = self.cursor.fetchall()
-
-    #     courses = []
-    #     for result in results:
-    #         course_data = result[:6]
-    #         tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], result[6:]))
-    #         courses.append(Course(*course_data, **tariffs))
-        
-    #     return courses if results else []
-    # def __del__(self):
-    #     self.connection.close()
     
-    
-
 
     def select_courses(self, search_term):
         """Finds courses matching the search term and retrieves relevant details."""
         
         # Retrieve all course names from the database
         self.cursor.execute("SELECT course_name FROM course")
-        all_course_names = [row[0] for row in self.cursor.fetchall()]
+        #all_course_names = [row[0] for row in self.cursor.fetchall()]
+        all_course_names = []
+        for row in self.cursor.fetchall():
+            if row[0] not in all_course_names:
+                all_course_names.append(row[0]) 
 
         # Find the closest matches to the search term
-        similar_names = get_close_matches(search_term, all_course_names, n=300, cutoff=0.6)
-        if not similar_names:
-            return []  # Return an empty list if no matches found
+        print(search_term)
+        # Initialize TF-IDF Vectorizer
+        vectorizer = TfidfVectorizer()
+
+        # Create TF-IDF matrix for courses and the search query
+        tfidf_matrix = vectorizer.fit_transform(all_course_names + [search_term])
+
+        # Compute cosine similarity between search query and all course titles
+        similarities = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1])
+
+        # Rank courses based on similarity score
+        sorted_indices = similarities.argsort()[0][::-1]
+
+        # Display ranked results with non-zero scores
+        print("Top Matching Courses:")
+
+        for index in sorted_indices:
+            if similarities[0][index] > 0:
+                print(f"- {all_course_names[index]} (Score: {similarities[0][index]:.2f})")
+        
+        similar_names = [all_course_names[index] for index in sorted_indices if similarities[0][index] > 0.1]
+
 
         # Fetch matching course details
         placeholders = ", ".join(["%s"] * len(similar_names))
@@ -72,6 +78,8 @@ class Database: # this class is used to interact with the database
             JOIN university u ON c.university_id = u.university_id
             WHERE c.course_name IN ({placeholders})
         """
+        #print(placeholders)
+        #print(query)
         self.cursor.execute(query, tuple(similar_names))
         results = self.cursor.fetchall()
 
@@ -129,19 +137,18 @@ class Course:
             **self.__tariffs,
             "score": round(self.__score, 2),
             "distance": round(self.__distance, 2),
-            "university_name": self.__university.get_university_name(),
-            "university_type": self.__university.get_university_type(),
+            "university_name": self.__university.get_university_name(), # this is the name of the university that the course belongs to
+            "university_type": self.__university.get_university_type(), # this is the type of the university that the course belongs to
             "requirements": self.__requirements,
-            "tucked_courses": [course.convert_to_json() for course in self.__tucked_courses]
+            "tucked_courses": [course.convert_to_json() for course in self.__tucked_courses] # this is a list of the courses that have been tucked into this course
         }
 
 
 
 
-
     def calculate_score(self, data):
-        # Normalize scores
-        distance_score = self.__calculate_distance_score(data)
+        # calculate scores
+        distance_score = self.__calculate_distance_score(data) #
         tariff_score = self.__calculate_tariff_score(data) 
         university_type_score = self.__calculate_university_type_score(data) 
         year_abroad_score = self.__calculate_year_abroad_score(data) 
@@ -293,12 +300,12 @@ class Course:
 
 
 class University:
-    def __init__(self, university_id, university_name, university_url, university_type):
+    def __init__(self, university_id, university_name, university_url, university_type): # this is the constructor for the University class
         self.university_id = university_id
         self.__university_name = university_name
         self.__university_url = university_url
         self.__university_type = university_type
-        self.__locations =[]
+        self.__locations =[] # this is a list of dictionaries containing the locations of the university
 
     def convert_to_json(self): # this method converts the object into a dictionary that can be converted to JSON
         return {
@@ -321,7 +328,7 @@ class University:
     def get_university_name(self):
         return self.__university_name
 
-class CourseResource(Resource):
+class CourseResource(Resource): # this is the class that is used to get course details it is not currently used
     def get(self, course_id):
         db = Database()
         course = db.get_course(course_id)
@@ -330,7 +337,7 @@ class CourseResource(Resource):
         abort(404, message="Course not found")
 
 
-class UniversityResource(Resource):
+class UniversityResource(Resource): # this is the class that is used to get university details it is not currently used
     def get(self, university_id):
         db = Database()
         university = db.get_university(university_id)
@@ -338,13 +345,13 @@ class UniversityResource(Resource):
             return jsonify(university.convert_to_json())
         abort(404, message="University not found")
 
-class CourseSearchResource(Resource):
+class CourseSearchResource(Resource): # this is the class that is used to search for courses
     def __init__(self):
         self.db=Database()
 
 
 
-    def get(self):
+    def get(self): # this is the get method that is not currently used
         course_name = request.args.get('course_name')
         if not course_name:
             abort(400, message="Course name is required")
@@ -404,31 +411,37 @@ class CourseSearchResource(Resource):
 
 
     def merge_sort(self, unsorted_courses):
-        if len(unsorted_courses) > 1:
-            half = len(unsorted_courses) // 2
-            left = unsorted_courses[:half]
-            right = unsorted_courses[half:]
-            self.merge_sort(left)
-            self.merge_sort(right)
-            k = j = i = 0
-            while i < len(left) and j < len(right):
-                if left[i].display_score() < right[j].display_score():
-                    unsorted_courses[k] = left[i]
-                    i += 1
-                else:
-                    unsorted_courses[k] = right[j]
-                    j += 1
-                k += 1
+        if len(unsorted_courses) <= 1:
+            return unsorted_courses
+        else:
+            mid = len(unsorted_courses) // 2
+            left = unsorted_courses[:mid]
+            right = unsorted_courses[mid:]
 
-            while i < len(left):
-                unsorted_courses[k] = left[i]
-                i += 1
-                k += 1
-            while j < len(right):
-                unsorted_courses[k] = right[j]
-                j += 1
-                k += 1
-        return unsorted_courses
+            left = self.merge_sort(left) #calls itself recursively to sort the left side
+            right = self.merge_sort(right) #calls itself recursively to sort the right side
+
+            return self.merge(left, right) #merges the left and right sides
+
+    
+    def merge(self, left, right): # this method merges the left and right sides of the list
+        result = []
+        left_index = 0
+        right_index = 0
+
+        while left_index < len(left) and right_index < len(right):
+            if left[left_index].display_score() < right[right_index].display_score():
+                result.append(left[left_index])
+                left_index += 1
+            else:
+                result.append(right[right_index])
+                right_index += 1
+
+        result += left[left_index:]
+        result += right[right_index:]
+
+        return result # returns the merged list
+
 
 
 
