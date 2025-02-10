@@ -18,14 +18,14 @@
     <h1>University Course Search</h1>
 
     <h2>Search for Courses</h2>
-    <h3>Course Name <input id="search-input" onchange="courseChanged(this.value)"/></h3>
+    <h3>Course Name <input id="search-input"/></h3>
     <h3>Year Abroad <input id="year-abroad-checkbox" type="checkbox"/></h3>
 
     <br>
 
     <label for="year-abroad-weight-slider">Year Abroad Weight:</label>
     <input type="range" id="year-abroad-weight-slider" name="year-abroad-weight-slider" min="0" max="100" value="50" oninput="updateYearAbroadWeight(this.value)">
-    <span id="year-abroad-weight-value">?</span>
+    <span id="year-abroad-weight-value">50</span>
 
     <br>
 
@@ -37,7 +37,7 @@
     <!-- Add range slider -->
     <label for="course-length-weight-slider">Course Length Weight:</label>
     <input type="range" id="course-length-weight-slider" name="course-length-weight-slider" min="0" max="100" value="50" oninput="updateCourseLengthWeight(this.value)">
-    <span id="course-length-weight-value">?</span>
+    <span id="course-length-weight-value">50</span>
 
     <br>
 
@@ -55,7 +55,7 @@
 
     <label for="university-type-weight-slider">University Type Weight:</label>
     <input type="range" id="university-type-weight-slider" name="university-type-weight-slider" min="0" max="100" value="50" oninput="updateUniversityTypeWeight(this.value)">
-    <span id="university-type-weight-value">?</span>
+    <span id="university-type-weight-value">50</span>
 
     <br>
 
@@ -76,7 +76,7 @@
 
     <label for="distance-weight-slider">Distance Weight:</label>
     <input type="range" id="distance-weight-slider" name="distance-weight-slider" min="0" max="100" value="50" oninput="updateDistanceWeight(this.value)">
-    <span id="distance-weight-value">?</span>
+    <span id="distance-weight-value">50</span>
 
     <br>
 
@@ -101,7 +101,7 @@
 
     <label for="tariff-weight-slider">Grades Weight:</label>
     <input type="range" id="tariff-weight-slider" name="tariff-weight-slider" min="0" max="100" value="50" oninput="updateTariffWeight(this.value)">
-    <span id="tariff-weight-value">?</span>
+    <span id="tariff-weight-value">50</span>
 
     <br>
 
