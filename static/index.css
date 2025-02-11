@@ -1,5 +1,8 @@
 body {
     font-family: "Roboto", sans-serif;
+    margin: 10;
+    padding: 0;
+    background-color: #f0f0f0;
 }
 
 .result-box {
@@ -9,6 +12,15 @@ body {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     background-color: lightblue;
 }
+
+h2 {
+    margin: 0;
+}
+
+h3 {
+    margin: 20;
+}
+
 
 .label {
     font-weight: bold;
@@ -23,3 +35,4 @@ body {
 .spinner-visible {
     display: block;
 }
+

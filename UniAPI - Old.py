@@ -1,9 +1,7 @@
 from flask import Flask, jsonify, request, render_template # this is used to create the web app
 from flask_restful import Api, Resource, abort # this is used to create the API
 import psycopg2 as psycopg # this is used to interact with the database
-
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from difflib import get_close_matches # this is used to find the closest matches to a search term
 
 from geopy.distance import geodesic # this is used to calculate the distance between two coordinates
 from geopy.geocoders import Nominatim # this is used to convert postcodes to coordinates
@@ -33,42 +31,38 @@ class Database: # this class is used to interact with the database
         if result:
             return University(*result)
         return None
+
+    # def search_courses(self, course_name, course_length=None, limit=5): # shouldnt be used
+    #     if course_length:
+    #         self.cursor.execute("SELECT * FROM course WHERE course_name LIKE %s AND course_length = %s LIMIT %s", ('%' + course_name + '%', course_length, limit))
+    #     else:
+    #         self.cursor.execute("SELECT * FROM course WHERE course_name LIKE %s LIMIT %s", ('%' + course_name + '%', limit))
+    #     results = self.cursor.fetchall()
+
+    #     courses = []
+    #     for result in results:
+    #         course_data = result[:6]
+    #         tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], result[6:]))
+    #         courses.append(Course(*course_data, **tariffs))
+        
+    #     return courses if results else []
+    # def __del__(self):
+    #     self.connection.close()
     
+    
+
 
     def select_courses(self, search_term):
         """Finds courses matching the search term and retrieves relevant details."""
         
         # Retrieve all course names from the database
         self.cursor.execute("SELECT course_name FROM course")
-        #all_course_names = [row[0] for row in self.cursor.fetchall()]
-        all_course_names = []
-        for row in self.cursor.fetchall():
-            if row[0] not in all_course_names:
-                all_course_names.append(row[0]) 
+        all_course_names = [row[0] for row in self.cursor.fetchall()]
 
         # Find the closest matches to the search term
-        print(search_term)
-        # Initialize TF-IDF Vectorizer
-        vectorizer = TfidfVectorizer()
-
-        # Create TF-IDF matrix for courses and the search query
-        tfidf_matrix = vectorizer.fit_transform(all_course_names + [search_term])
-
-        # Compute cosine similarity between search query and all course titles
-        similarities = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1])
-
-        # Rank courses based on similarity score
-        sorted_indices = similarities.argsort()[0][::-1]
-
-        # Display ranked results with non-zero scores
-        print("Top Matching Courses:")
-
-        for index in sorted_indices:
-            if similarities[0][index] > 0:
-                print(f"- {all_course_names[index]} (Score: {similarities[0][index]:.2f})")
-        
-        similar_names = [all_course_names[index] for index in sorted_indices if similarities[0][index] > 0.1]
-
+        similar_names = get_close_matches(search_term, all_course_names, n=300, cutoff=0.5)
+        if not similar_names:
+            return []  # Return an empty list if no matches found
 
         # Fetch matching course details
         placeholders = ", ".join(["%s"] * len(similar_names))
@@ -78,9 +72,7 @@ class Database: # this class is used to interact with the database
             JOIN university u ON c.university_id = u.university_id
             WHERE c.course_name IN ({placeholders})
         """
-        #print(placeholders)
-        #print(query)
-        self.cursor.execute(query, tuple(similar_names))
+        self.cursor.execute(query, tuple(similar_names)) # Execute query with similar course names
         results = self.cursor.fetchall()
 
         courses = []
@@ -156,7 +148,8 @@ class Course:
 
         # Dynamic weights based on user preferences
         distance_weight = float(data.get('distance_weight', 50))
-        tariff_weight = float(data.get('tariff_weight', 100))
+        tariff_weight = float(data.get('tariff_weight', 50))
+        tariff_weight = tariff_weight*4 # this makes sure tariff is more important than the other factors
         university_type_weight = float(data.get('university_type_weight', 50))
         year_abroad_weight = float(data.get('year_abroad_weight', 50))
         course_length_weight = float(data.get('course_length_weight', 50))
