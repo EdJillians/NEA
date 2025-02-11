@@ -56,6 +56,31 @@ const saveFormToLocalStorage = () => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(form));
 };
 
+const updateTariffWeight = () => {
+    const tariffWeight = document.getElementById('tariff-weight-slider').value;
+    document.getElementById('tariff-weight-value').textContent = tariffWeight;
+}
+const updateCourseLengthWeight = () => {
+    const courseLengthWeight = document.getElementById('course-length-weight-slider').value;
+    document.getElementById('course-length-weight-value').textContent = courseLengthWeight;
+}
+
+const updateDistanceWeight = () => {
+    const distanceWeight = document.getElementById('distance-weight-slider').value;
+    document.getElementById('distance-weight-value').textContent = distanceWeight;
+}
+
+const updateUniversityTypeWeight = () => {
+    const universityTypeWeight = document.getElementById('university-type-weight-slider').value;
+    document.getElementById('university-type-weight-value').textContent = universityTypeWeight;
+}
+
+const updateYearAbroadWeight = () => {
+    const yearAbroadWeight = document.getElementById('year-abroad-weight-slider').value;
+    document.getElementById('year-abroad-weight-value').textContent = yearAbroadWeight;
+}
+
+
 // Populate form with saved values
 document.addEventListener('DOMContentLoaded', () => {
     const form = loadForm();
@@ -122,11 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('grade-dropdown4').value = form.grades[3];
     }
 
-    document.getElementById('course-length-weight-slider').value = form.course_length_weight;
-    document.getElementById('distance-weight-slider').value = form.distance_weight;
-    document.getElementById('tariff-weight-slider').value = form.tariff_weight;
-    document.getElementById('university-type-weight-slider').value = form.university_type_weight;
-    document.getElementById('year-abroad-weight-slider').value = form.year_abroad_weight;
+    
+    document.getElementById('course-length-weight-slider').value = form.course_length_weight || 50;
+    document.getElementById('distance-weight-slider').value = form.distance_weight || 50;
+    document.getElementById('tariff-weight-slider').value = form.tariff_weight || 50;
+    document.getElementById('university-type-weight-slider').value = form.university_type_weight || 50;
+    document.getElementById('year-abroad-weight-slider').value = form.year_abroad_weight|| 50;
 });
 
 // Save form when any input changes
@@ -150,7 +176,7 @@ document.getElementById('search-button').addEventListener('click', async () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(form)
         });
-
+        console.log(response);
         if (!response.ok) {
             alert("An error occurred while fetching the data");
             hideSpinner();
