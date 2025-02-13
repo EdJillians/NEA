@@ -10,7 +10,7 @@ const hideSpinner = () =>
 const loadForm = () => {
     const storedForm = localStorage.getItem(LOCAL_STORAGE_KEY);
     return storedForm ? JSON.parse(storedForm) : {
-        course: '',
+        search_term: '',
         year_abroad: false,
         course_length: '3',
         course_length_weight: 50,
@@ -29,7 +29,7 @@ const loadForm = () => {
 // Save form data to local storage
 const saveFormToLocalStorage = () => {
     const form = {
-        course: document.getElementById('search-input').value,
+        search_term: document.getElementById('search-input').value,
         year_abroad: document.getElementById('year-abroad-checkbox').checked,
         course_length: document.getElementById('course-length-input').value,
         course_length_weight: document.getElementById('course-length-weight-slider').value,
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    document.getElementById('search-input').value = form.course;
+    document.getElementById('search-input').value = form.search_term || '';
     document.getElementById('year-abroad-checkbox').checked = form.year_abroad;
     document.getElementById('course-length-input').value = form.course_length || '';
     document.getElementById('university-type-dropdown').value = form.university_type;
