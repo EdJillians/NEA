@@ -364,6 +364,7 @@ class CourseSearchResource(Resource): # this is the class that is used to search
     def post(self): # this is the method that is called when a POST request is made to the endpoint it is the main method that is called when the user searches for courses
 
         data = request.get_json()
+        print(data)
         if not data or 'search_term' not in data:
             abort(400, message="No search term provided")
         
