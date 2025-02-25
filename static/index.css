@@ -36,3 +36,24 @@ h3 {
     display: block;
 }
 
+.alternative-courses {
+    cursor: pointer;
+}
+
+.alternative-courses .label {
+    display: flex;
+    align-items: center;
+}
+
+.alternative-courses-list {
+    margin: 0;
+}
+
+.alternative-courses-list.hidden {
+    display: none;
+}
+
+.alternative-courses-arrow {
+   width: 30px; 
+   transform: rotate(-90deg);
+}
