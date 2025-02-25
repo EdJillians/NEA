@@ -1,12 +1,12 @@
-const LOCAL_STORAGE_KEY = 'universityCourseSearch';
+const LOCAL_STORAGE_KEY = 'universityCourseSearch'; // Key for local storage
 
-const showSpinner = () => 
+const showSpinner = () => // Show spinner
     document.getElementById("spinner").classList.add("spinner-visible");
 
-const hideSpinner = () => 
+const hideSpinner = () =>  // Hide spinner
     document.getElementById("spinner").classList.remove("spinner-visible");
 
-// Load form data from local storage or use default values
+// Load form data from local storage or return default values
 const loadForm = () => {
     const storedForm = localStorage.getItem(LOCAL_STORAGE_KEY);
     return storedForm ? JSON.parse(storedForm) : {
@@ -27,7 +27,16 @@ const loadForm = () => {
 };
 
 // Save form data to local storage
-const saveFormToLocalStorage = () => {
+/**
+ * Saves the form data to local storage.
+ * The form data includes search term, year abroad preference, course length, 
+ * course length weight, university type, postcode, preferred distance, 
+ * distance weight, tariff weight, university type weight, year abroad weight, 
+ * subjects, and grades.
+ * 
+ * @function
+ */
+const saveFormToLocalStorage = () => { 
     const form = {
         search_term: document.getElementById('search-input').value,
         year_abroad: document.getElementById('year-abroad-checkbox').checked,
@@ -53,11 +62,13 @@ const saveFormToLocalStorage = () => {
             document.getElementById('grade-dropdown4').value
         ]
     };
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(form));
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(form)); // Save form data to local storage
 };
 
+// Update weight values when sliders are moved 
+
 const updateTariffWeight = () => {
-    const tariffWeight = document.getElementById('tariff-weight-slider').value;
+    const tariffWeight = document.getElementById('tariff-weight-slider').value; 
     document.getElementById('tariff-weight-value').textContent = tariffWeight;
 }
 const updateCourseLengthWeight = () => {
@@ -80,13 +91,33 @@ const updateYearAbroadWeight = () => {
     document.getElementById('year-abroad-weight-value').textContent = yearAbroadWeight;
 }
 
+const getAlternativeCourses = (course) => {
+    if (!course.tucked_courses || course.tucked_courses.length == 0) {
+        return '';
+    }
+
+    // return `Other Courses: ${course.tucked_courses.map(c => JSON.stringify(c)).join(', ')}`;
+
+    return `
+        <div class="label"><img class="alternative-courses-arrow" src="/static/assets/arrow.svg"/>Alternative Courses</div>
+        <ul class="alternative-courses-list hidden">
+            ${course.tucked_courses.map(c => `<li><a href="${c.course_url}">${c.course_name}</a> (${c.course_length} years)</li>`).join('')}
+        </ul>
+    `;
+}
+
+const toggleAlternativeCourses = (element) => {
+    const alternativeCourses = element.querySelector('.alternative-courses-list');
+    alternativeCourses.classList.toggle('hidden');
+}
+
 
 // Populate form with saved values
 document.addEventListener('DOMContentLoaded', () => {
     const form = loadForm();
 
     // Populate grade dropdowns dynamically
-    const grades = ["","A*", "A", "B", "C", "D", "E"];
+    const grades = ["","A*", "A", "B", "C", "D", "E"]; // Grades array
     for (let i = 1; i <= 4; i++) {
         const dropdown = document.getElementById(`grade-dropdown${i}`);
         grades.forEach(grade => {
@@ -97,8 +128,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
         // Populate subject dropdowns dynamically
-        const subjects = [
-            "","Biology", "Chemistry", "Physics", "Environmental Science", "Geology", "Psychology", 
+        const subjects = [ 
+            "","Biology", "Chemistry", "Physics", "Environmental Science", "Geology", "Psychology", // Subjects array
             "Mathematics", "Further Mathematics", "Statistics", "History", "Geography", 
             "Religious Studies", "Philosophy", "Politics", "Sociology", "Law", 
             "Classical Civilisation", "English Language", "English Literature", "French", 
@@ -119,10 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dropdown.appendChild(option);
             });
         }
-
-
-
-
+    
     document.getElementById('search-input').value = form.search_term || '';
     document.getElementById('year-abroad-checkbox').checked = form.year_abroad;
     document.getElementById('course-length-input').value = form.course_length || '';
@@ -158,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('tariff-weight-value').textContent = form.tariff_weight || 50;
 
     document.getElementById('university-type-weight-slider').value = form.university_type_weight || 50;
-    document.getElementById('university-type-weight-value').textContent = form.university_type_weight || 50;
+    document.getElementById('university-type-weight-value').textContent = form.university_type_weight || 50; // default value is 50 for the sliders
 
     document.getElementById('year-abroad-weight-slider').value = form.year_abroad_weight|| 50;
     document.getElementById('year-abroad-weight-value').textContent = form.year_abroad_weight || 50;
@@ -174,11 +202,11 @@ document.getElementById('search-button').addEventListener('click', async () => {
     saveFormToLocalStorage();
     const form = loadForm();
 
-    const resourceUrl = 'http://127.0.0.1:5000/courses/search';
+    const resourceUrl = 'http://127.0.0.1:5000/courses/search'; // URL for the API  
 
     let response, json;
     try {
-        showSpinner();
+        showSpinner(); // Show spinner
 
         response = await fetch(resourceUrl, {
             method: 'POST',
@@ -188,39 +216,50 @@ document.getElementById('search-button').addEventListener('click', async () => {
         console.log(response);
         if (!response.ok) {
             alert("An error occurred while fetching the data");
-            hideSpinner();
+            hideSpinner(); // Hide spinner on error
             return;
         }
 
         json = await response.json();
     } catch (error) {
         alert("An error occurred: " + error.message);
-        hideSpinner();
+        hideSpinner(); // Hide spinner on error
         return;
     }
 
-    hideSpinner();
+    hideSpinner(); // Hide spinner on success
     const results = document.getElementById('results');
     results.innerHTML = '';
 
-    json.forEach(course => {
+    json.forEach(course => { // Display results in the results box
         const resultBox = document.createElement('div');
         resultBox.className = 'result-box';
         resultBox.innerHTML = `
             <div class="name"><span class="label">Name: </span><span>${course.course_name}</span></div>
             <div class="university"><span class="label">University: </span><span>${course.university_name}</span></div>
-            <div class="course-length"><span class="label">Course Length: </span><span>${course.course_length}</span></div>
+            <div class="course-length"><span class="label">Course Length: </span><span>${course.course_length} years</span></div>
             <div class="year-abroad"><span class="label">Year Abroad: </span><span>${course.study_abroad}</span></div>
             <div class="url"><span class="label">URL: </span><a href="${course.course_url}">${course.course_url}</a></div>
             <div class="distance"><span class="label">Distance: </span><span>${course.distance}</span></div>
             <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
+
+
+            <div class="alternative-courses">${getAlternativeCourses(course)}</span></div>
+
             <button class="dismiss-btn">Dismiss</button>
         `;
 
         results.appendChild(resultBox);
 
         resultBox.querySelector('.dismiss-btn').addEventListener('click', () => {
-            resultBox.remove();
+            resultBox.remove(); // Remove result box when dismiss button is clicked
         });
+
+        
     });
+
+    document.querySelectorAll('.alternative-courses').forEach(element => {
+        element.addEventListener('click', () => toggleAlternativeCourses(element));
+    });
+    
 });

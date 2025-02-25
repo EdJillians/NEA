@@ -294,7 +294,6 @@ class Course:
 
 
 
-
 class University:
     def __init__(self, university_id, university_name, university_url, university_type): # this is the constructor for the University class
         self.university_id = university_id
