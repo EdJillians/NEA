@@ -46,30 +46,25 @@ class Database: # this class is used to interact with the database
         for row in self.cursor.fetchall():
             if row[0] not in all_course_names:
                 all_course_names.append(row[0]) 
-
         # Find the closest matches to the search term
         print(search_term)
         # Initialize TF-IDF Vectorizer
         vectorizer = TfidfVectorizer()
-
         # Create TF-IDF matrix for courses and the search query
         tfidf_matrix = vectorizer.fit_transform(all_course_names + [search_term])
-
         # Compute cosine similarity between search query and all course titles
         similarities = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1])
-
         # Rank courses based on similarity score
         sorted_indices = similarities.argsort()[0][::-1]
-
         # Display ranked results with non-zero scores
-        print("Top Matching Courses:")
-
-        for index in sorted_indices:
-            if similarities[0][index] > 0:
-                print(f"- {all_course_names[index]} (Score: {similarities[0][index]:.2f})")
         
-        similar_names = [all_course_names[index] for index in sorted_indices if similarities[0][index] > 0.1]
+        #print("Top Matching Courses:") # this was used for testing
+        # for index in sorted_indices: 
+        #     if similarities[0][index] > 0:
+        #         print(f"- {all_course_names[index]} (Score: {similarities[0][index]:.2f})")
 
+        #Filter out courses with low similarity scores
+        similar_names = [all_course_names[index] for index in sorted_indices if similarities[0][index] > 0.1]
 
         # Fetch matching course details
         placeholders = ", ".join(["%s"] * len(similar_names))
