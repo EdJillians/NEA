@@ -149,10 +149,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
     document.getElementById('course-length-weight-slider').value = form.course_length_weight || 50;
+    document.getElementById('course-length-weight-value').textContent = form.course_length_weight || 50;
+
     document.getElementById('distance-weight-slider').value = form.distance_weight || 50;
+    document.getElementById('distance-weight-value').textContent = form.distance_weight || 50;
+
     document.getElementById('tariff-weight-slider').value = form.tariff_weight || 50;
+    document.getElementById('tariff-weight-value').textContent = form.tariff_weight || 50;
+
     document.getElementById('university-type-weight-slider').value = form.university_type_weight || 50;
+    document.getElementById('university-type-weight-value').textContent = form.university_type_weight || 50;
+
     document.getElementById('year-abroad-weight-slider').value = form.year_abroad_weight|| 50;
+    document.getElementById('year-abroad-weight-value').textContent = form.year_abroad_weight || 50;
 });
 
 // Save form when any input changes
