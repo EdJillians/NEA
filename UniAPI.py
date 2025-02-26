@@ -316,10 +316,14 @@ class University:
 
     def get_university_type(self):
         return self.__university_type
+    
     def get_university_coordinates(self):
-        #print(self.__locations[0]["latitude"], self.__locations[0]["longitude"])
+        for location in self.__locations:
+            if "main" in location["location_name"].lower() or self.__university_name.split()[-1].lower() in location["location_name"].lower():
+                return (location["latitude"], location["longitude"])
+
         return (self.__locations[0]["latitude"], self.__locations[0]["longitude"])
-        #return self.__locations
+
     def get_university_name(self):
         return self.__university_name
 

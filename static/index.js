@@ -99,7 +99,7 @@ const getAlternativeCourses = (course) => {
     // return `Other Courses: ${course.tucked_courses.map(c => JSON.stringify(c)).join(', ')}`;
 
     return `
-        <div class="label"><img class="alternative-courses-arrow" src="/static/assets/arrow.svg"/>Alternative Courses</div>
+        <div class="label"><img class="alternative-courses-arrow" src="/static/assets/arrow.svg"/>Alternative Courses at ${course.university_name}:</div>
         <ul class="alternative-courses-list hidden">
             ${course.tucked_courses.map(c => `<li><a href="${c.course_url}">${c.course_name}</a> (${c.course_length} years)</li>`).join('')}
         </ul>
@@ -242,9 +242,7 @@ document.getElementById('search-button').addEventListener('click', async () => {
             <div class="url"><span class="label">URL: </span><a href="${course.course_url}">${course.course_url}</a></div>
             <div class="distance"><span class="label">Distance: </span><span>${course.distance}</span></div>
             <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
-
-
-            <div class="alternative-courses">${getAlternativeCourses(course)}</span></div>
+            <div class="alternative-courses">${getAlternativeCourses(course)}</span></div> // Display alternative courses when clicked
 
             <button class="dismiss-btn">Dismiss</button>
         `;
