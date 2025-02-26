@@ -293,7 +293,6 @@ class Course:
 
 
 
-
 class University:
     def __init__(self, university_id, university_name, university_url, university_type): # this is the constructor for the University class
         self.university_id = university_id
@@ -318,9 +317,9 @@ class University:
         return self.__university_type
     
     def get_university_coordinates(self):
-        for location in self.__locations:
-            if "main" in location["location_name"].lower() or self.__university_name.split()[-1].lower() in location["location_name"].lower():
-                return (location["latitude"], location["longitude"])
+        #for location in self.__locations:
+            #if "main" in location["location_name"].lower() or self.__university_name.split()[-1].lower() in location["location_name"].lower():
+                #return (location["latitude"], location["longitude"])
 
         return (self.__locations[0]["latitude"], self.__locations[0]["longitude"])
 
