@@ -111,6 +111,16 @@ const toggleAlternativeCourses = (element) => {
     alternativeCourses.classList.toggle('hidden');
 }
 
+const getValidationErrors = (form) => {
+    const errors = [];
+
+    if (!form.course_length || (isNaN(form.course_length) || form.course_length < 1 || form.course_length > 8)) {
+        errors.push('Course length must be a number of years between 1 and 8.');
+    }
+
+    return errors;
+}
+
 
 // Populate form with saved values
 document.addEventListener('DOMContentLoaded', () => {
@@ -197,12 +207,21 @@ document.querySelectorAll('input, select').forEach(element => {
     element.addEventListener('change', saveFormToLocalStorage);
 });
 
+
 // Search button event listener
 document.getElementById('search-button').addEventListener('click', async () => {
     saveFormToLocalStorage();
     const form = loadForm();
 
     const resourceUrl = 'http://127.0.0.1:5000/courses/search'; // URL for the API  
+
+    // Validate the user input:
+    const validationErrors = getValidationErrors(form);
+    if (validationErrors.length > 0) {
+        const results = document.getElementById('results');
+        results.innerHTML = `<div class="validation-errors">${validationErrors.join(". ")}</div>`;
+        return;
+    }
 
     let response, json;
     try {
@@ -242,7 +261,7 @@ document.getElementById('search-button').addEventListener('click', async () => {
             <div class="url"><span class="label">URL: </span><a href="${course.course_url}">${course.course_url}</a></div>
             <div class="distance"><span class="label">Distance: </span><span>${course.distance}</span></div>
             <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
-            <div class="alternative-courses">${getAlternativeCourses(course)}</span></div> // Display alternative courses when clicked
+            <div class="alternative-courses">${getAlternativeCourses(course)}</span></div>
 
             <button class="dismiss-btn">Dismiss</button>
         `;

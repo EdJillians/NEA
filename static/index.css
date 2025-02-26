@@ -57,3 +57,7 @@ h3 {
    width: 30px; 
    transform: rotate(-90deg);
 }
+
+.validation-errors {
+    color: darkred;
+}
