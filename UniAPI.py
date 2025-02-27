@@ -93,14 +93,14 @@ class Database: # this class is used to interact with the database
             requirements = [req[0] for req in self.cursor.fetchall()]
 
             # Retrieve university locations
-            self.cursor.execute("SELECT latitude, longitude FROM location WHERE university_id = %s", (university_id,))
-            locations = [{"latitude": loc[0], "longitude": loc[1]} for loc in self.cursor.fetchall()]
+            self.cursor.execute("SELECT latitude, longitude, location_name FROM location WHERE university_id = %s", (university_id,))
+            locations = [{"latitude": loc[0], "longitude": loc[1],"name": loc[2]} for loc in self.cursor.fetchall()]
             if not locations:
-                locations = [{"latitude": 0, "longitude": 0}]  # Default value if no locations exist
+                locations = [{"latitude": 0, "longitude": 0, "name": ""}]  # Default value if no locations exist
 
             # Create University and Course objects
             university = University(university_id, university_name, "", university_type)
-            university.set_locations(locations)
+            university.set_locations(locations) # this sets the locations for the university
             course = Course(course_id, course_name, course_url, course_length, study_abroad, university_id, university, requirements, **tariffs)
 
             courses.append(course)
@@ -132,7 +132,7 @@ class Course:
             "course_url": self.__course_url,
             **self.__tariffs,
             "score": round(self.__score, 2),
-            "distance": round(self.__distance, 2),
+            "distance": self.__distance,
             "university_name": self.__university.get_university_name(), # this is the name of the university that the course belongs to
             "university_type": self.__university.get_university_type(), # this is the type of the university that the course belongs to
             "requirements": self.__requirements,
@@ -175,14 +175,15 @@ class Course:
         return final_score
 
     def __calculate_distance_score(self, data):
-        if data.get('postcode'):
+        print(self.__distance)
+        if data.get('postcode') and data.get('preferred_distance'): # check if the user has entered a postcode and a preferred distance
             self.__calculate_distance(data)
-            if self.__distance == "Invalid postcode":
+            if self.__distance == 0:
                 distance_score = 0
             else:
                 preferred_distance = data.get('preferred_distance') # retrieve the user's preferred distance from the data
                 #print(preferred_distance)
-                if preferred_distance == "More than 500" and self.__distance > 500:
+                if preferred_distance == "more than 500" and self.__distance > 500:
                     distance_score = 1
                 elif preferred_distance == "400-500" and 400 <= self.__distance <= 500:
                     distance_score = 1
@@ -237,7 +238,7 @@ class Course:
         user_location = data.get("coords") #retrieve the user's location from the data
 
         if not user_location:
-            self.__distance = "Invalid postcode"
+            self.__distance = 0
             return
         university_coords = self.__university.get_university_coordinates()
         #print(university_coords)
@@ -317,9 +318,9 @@ class University:
         return self.__university_type
     
     def get_university_coordinates(self):
-        #for location in self.__locations:
-            #if "main" in location["location_name"].lower() or self.__university_name.split()[-1].lower() in location["location_name"].lower():
-                #return (location["latitude"], location["longitude"])
+        for location in self.__locations:
+            if "main" in location["name"].lower() or self.__university_name.split()[-1].lower() in location["name"].lower():
+                return (location["latitude"], location["longitude"])
 
         return (self.__locations[0]["latitude"], self.__locations[0]["longitude"])
 

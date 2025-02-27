@@ -113,10 +113,22 @@ const toggleAlternativeCourses = (element) => {
 
 const getValidationErrors = (form) => {
     const errors = [];
-
+    if (!form.search_term) {
+        errors.push('Please enter a course name to search for.');
+    }
     if (!form.course_length || (isNaN(form.course_length) || form.course_length < 1 || form.course_length > 8)) {
         errors.push('Course length must be a number of years between 1 and 8.');
     }
+    if (form.postcode.length > 0 && form.postcode.length != 7) {
+        errors.push('Postcode must be 7 characters long.');
+    }
+    if (form.subject.filter(subject => subject).length < 3) {
+        errors.push('Please select at least 3 subjects.');
+    }
+    if (form.grades.filter(grade => grade).length < 3) {
+        errors.push('Please enter at least 3 A-level grades.');
+    }
+
 
     return errors;
 }
@@ -279,4 +291,10 @@ document.getElementById('search-button').addEventListener('click', async () => {
         element.addEventListener('click', () => toggleAlternativeCourses(element));
     });
     
+});
+
+// Reset button event listener
+document.getElementById('reset-button').addEventListener('click', () => {
+    localStorage.removeItem(LOCAL_STORAGE_KEY); // Remove form data from local storage
+    location.reload(); // Reload the page
 });
