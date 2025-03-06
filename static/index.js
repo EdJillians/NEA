@@ -273,8 +273,13 @@ document.getElementById('search-button').addEventListener('click', async () => {
             <div class="url"><span class="label">URL: </span><a href="${course.course_url}">${course.course_url}</a></div>
             <div class="distance"><span class="label">Distance: </span><span>${course.distance}</span></div>
             <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
-            <div class="alternative-courses">${getAlternativeCourses(course)}</span></div>
-
+            <div class="alternative-courses">${getAlternativeCourses(course)}</div>
+            <div class="requirements">
+            <span class="label">Requirements:</span>
+            <ul>
+                ${course.requirements.map(req => `<li>${req.subject}: ${req.grade}</li>`).join('')}
+            </ul>
+            </div>
             <button class="dismiss-btn">Dismiss</button>
         `;
 

@@ -8,16 +8,16 @@ NEA_FOLDER_PATH = 'c:/Users/edwar/OneDrive/!Computer_Science/NEA/'
 def main():
     # create_database()
     with psycopg.connect("dbname=University user=postgres password=P9@ndalfos") as conn: # connect to the database
-        drop_tables(conn)
-        create_tables(conn)
-        university_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/INSTITUTION.csv', 'university')
-        course_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/KISCOURSE.csv', 'course')
-        location_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/LOCATION.csv', 'location')
-        load_csv(conn, university_csv, 'university')
-        load_csv(conn, course_csv, 'course')
-        load_csv(conn, location_csv, 'location')
+        # drop_tables(conn)
+        # create_tables(conn)
+        # university_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/INSTITUTION.csv', 'university')
+        # course_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/KISCOURSE.csv', 'course')
+        # location_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/LOCATION.csv', 'location')
+        # load_csv(conn, university_csv, 'university')
+        # load_csv(conn, course_csv, 'course')
+        # load_csv(conn, location_csv, 'location')
         populate_requirement(conn)
-        alter_university_types(conn)
+        # alter_university_types(conn)
 
     pass
 
@@ -249,16 +249,40 @@ def drop_tables(conn):
 
 def populate_requirement(conn):
     with conn.cursor() as cur:
-        cur.execute("""
-                    INSERT INTO requirement (course_id, grade, a_level_subject) VALUES ('2571192_10007798_10007798_4.0_1', 'A', 'Mathematics');
-        """)
-        # grades=['A*','A', 'B', 'C', 'D',]
-        # counter=0
-        # while True:
-        #     cur.execute("""
-        #                 INSERT INTO requirement (SELECT course_id FROM course WHERE course_name = 'Mathematics' LIMIT 1, grades[counter], 'Mathematics')
-        #                 """)
-        #     counter+=1
+        grades = ['A*', 'A', 'B', 'C', 'D']
+        categories = ["001", "048", "064", "080", "096", "112", "128", "144", "160", "176", "192", "208", "224", "240"]
+        
+        query = """
+        SELECT course_id, tariff_001, tariff_048, tariff_064, tariff_080, tariff_096, tariff_112, tariff_128, tariff_144, tariff_160, tariff_176, tariff_192, tariff_208, tariff_224, tariff_240
+        FROM course
+        WHERE course_name ILIKE '%mathematics%' OR course_name ILIKE '%physics%' OR course_name ILIKE '%computer science%';
+        """
+        cur.execute(query)
+        courses = cur.fetchall()
+        
+        for course in courses:
+            #print(course)
+            course_id = course[0]
+            tariffs = [t for t in course[1:] if t is not None]  # Filter out None values
+            print(tariffs)
+            if not tariffs:
+                continue  # Skip if all tariff values are None
+            max_tariff = max(tariffs)
+            max_tariff_index = course[1:].index(max_tariff)
+            category = categories[max_tariff_index]
+            
+            if category in ["208", "240"]:
+                grade = 'A'
+            elif category in ["160", "176", "192"]:
+                grade = 'B'
+            elif category in ["128", "144"]:
+                grade = 'C'
+            else:
+                continue  # No requirement for tariffs below 128
+            
+            cur.execute("""
+            INSERT INTO requirement (course_id, grade, a_level_subject) VALUES (%s, %s, %s);
+            """, (course_id, grade, 'Mathematics'))
         conn.commit()
 
 
