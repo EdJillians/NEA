@@ -76,6 +76,8 @@ class Database: # this class is used to interact with the database
         """
         #print(placeholders)
         #print(query)
+        if not similar_names:
+            return []
         self.cursor.execute(query, tuple(similar_names))
         results = self.cursor.fetchall()
 
@@ -89,9 +91,9 @@ class Database: # this class is used to interact with the database
             tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], course_row[6:]))
 
             # Retrieve course requirements
-            self.cursor.execute("SELECT requirement FROM requirement WHERE course_id = %s", (course_id,))
-            requirements = [req[0] for req in self.cursor.fetchall()]
-
+            self.cursor.execute("SELECT a_level_subject, grade FROM requirement WHERE course_id = %s", (course_id,))
+            requirements = [{"subject": req[0], "grade": req[1]} for req in self.cursor.fetchall()]
+            print(requirements)
             # Retrieve university locations
             self.cursor.execute("SELECT latitude, longitude, location_name FROM location WHERE university_id = %s", (university_id,))
             locations = [{"latitude": loc[0], "longitude": loc[1],"name": loc[2]} for loc in self.cursor.fetchall()]
