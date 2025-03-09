@@ -54,6 +54,45 @@ body {
     background-color: darkgreen;
 }
 
+.content {
+    width: 1000px;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 10px;
+}
+
+.search-field {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.search-field label {
+    display: inline-block;
+    min-width: 200px;
+}
+
+.search-field .text-input {
+    width: 200px;
+    padding: 5px;
+}
+
+.search-field .checkbox {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+}
+
+.range-slider {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.range-slider input {
+    width: 190px;
+}
+
+
 .result-box {
     border: 1px solid black;
     margin: 10px 0;
