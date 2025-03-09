@@ -452,21 +452,13 @@ api.add_resource(UniversityResource, "/university/<string:university_id>")
 
 api.add_resource(CourseSearchResource, "/courses/search")
 
-
-
-
-
 @app.route('/')
 def home():
     return render_template('index.html')
 
-
 @app.route('/search')
 def search():
     return render_template('search.html')
-
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
