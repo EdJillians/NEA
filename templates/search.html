@@ -25,110 +25,119 @@
         </div>
     </div>
 
-    <h1>University Course Search</h1>   <!-- Heading of the page -->
-    <p>Welcome to the University Course Search Tool. Use the form below to search for university courses based on your preferences.</p>
-    <h2>Search for Courses</h2>
-    <h3>Course Name <input id="search-input"/></h3> <!-- Add input field for course name -->
-    <h3>Year Abroad <input id="year-abroad-checkbox" type="checkbox"/></h3>  <!-- Add checkbox for year abroad -->
+    <section class="content">
 
-    <br>
+        <div class="search-field">
+            <label for="search-input">Course Name</label>
+            <input class="text-input" name="search-input" id="search-input"/>
+        </div>
+        
+        <div class="search-field">
+            <label for="year-abroad-checkbox name="year-abroad-checkbox">Year Abroad</label> 
+            <input class="checkbox" id="year-abroad-checkbox" type="checkbox"/>
+        </div>    
 
-    <label for="year-abroad-weight-slider">Year Abroad Weight:</label> <!-- Add label for range slider for year abroad weight -->
-    <input type="range" id="year-abroad-weight-slider" name="year-abroad-weight-slider" min="0" max="100" value="50" oninput="updateYearAbroadWeight(this.value)"> <!-- Add range slider for year abroad weight -->
-    <span id="year-abroad-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
+        <div class="search-field">
+            <label for="year-abroad-weight-slider">Year Abroad Weight</label>
+            <span class="range-slider">
+                <input type="range" id="year-abroad-weight-slider" name="year-abroad-weight-slider" min="0" max="100" value="50" oninput="updateYearAbroadWeight(this.value)"> <!-- Add range slider for year abroad weight -->
+                <span id="year-abroad-weight-value">50</span>
+            </span>    
+        </div>    
 
-    <br>
-
-
-    <h3>Course Length <input id="course-length-input"></h3> <!-- Add input field for course length -->
-
-    <br>
-
-    <!-- Add range slider -->
-    <label for="course-length-weight-slider">Course Length Weight:</label> <!-- Add label for range slider for course length weight -->
-    <input type="range" id="course-length-weight-slider" name="course-length-weight-slider" min="0" max="100" value="50" oninput="updateCourseLengthWeight(this.value)"> <!-- Add range slider for course length weight -->
-    <span id="course-length-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
-
-    <br>
+        <br>
 
 
-    <h3>University Type  <!-- Add dropdown for university type -->
-        <select id="university-type-dropdown">
-            <option value="campus">Campus</option>
-            <option value="city">City</option>
-            <option value="collegic">Collegic</option>
-            <option value="distance">Distance</option>
-        </select>
-    </h3>
+        <h3>Course Length <input id="course-length-input"></h3> <!-- Add input field for course length -->
 
-    <br>
+        <br>
 
-    <label for="university-type-weight-slider">University Type Weight:</label> <!-- Add label for range slider for university type weight -->
-    <input type="range" id="university-type-weight-slider" name="university-type-weight-slider" min="0" max="100" value="50" oninput="updateUniversityTypeWeight(this.value)"> <!-- Add range slider for university type weight -->
-    <span id="university-type-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
+        <!-- Add range slider -->
+        <label for="course-length-weight-slider">Course Length Weight:</label> <!-- Add label for range slider for course length weight -->
+        <input type="range" id="course-length-weight-slider" name="course-length-weight-slider" min="0" max="100" value="50" oninput="updateCourseLengthWeight(this.value)"> <!-- Add range slider for course length weight -->
+        <span id="course-length-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
 
-    <br>
-
-    <h3>Postcode <input id="postcode-input"/></h3> <!-- Add input field for postcode -->
-    <h3>Preferred Distance (km)
-        <select id="distance-dropdown"> <!-- Add dropdown for preferred distance -->
-            <option value="none"></option>
-            <option value="more than 500">More than 500</option>
-            <option value="400-500">400-500</option>
-            <option value="300-400">300-400</option>
-            <option value="200-300">200-300</option>
-            <option value="100-200">100-200</option>
-            <option value="less than 100">Less than 100</option>
-        </select>
-    </h3>
-
-    <br>
-
-    <label for="distance-weight-slider">Distance Weight:</label> <!-- Add label for range slider for distance weight -->
-    <input type="range" id="distance-weight-slider" name="distance-weight-slider" min="0" max="100" value="50" oninput="updateDistanceWeight(this.value)"> <!-- Add range slider for distance weight -->
-    <span id="distance-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
-
-    <br>
+        <br>
 
 
+        <h3>University Type  <!-- Add dropdown for university type -->
+            <select id="university-type-dropdown">
+                <option value="campus">Campus</option>
+                <option value="city">City</option>
+                <option value="collegic">Collegic</option>
+                <option value="distance">Distance</option>
+            </select>
+        </h3>
 
-    <h3>A-Level Grades</h3>  <!-- Add dropdowns for A-Level grades -->
-    
-    <select id="subject-dropdown1"></select>  <!-- Select element for an A-Level subject -->
-    <select id="grade-dropdown1"></select>
-    <br>
-    <select id="subject-dropdown2"></select>
-    <select id="grade-dropdown2"></select>
-    <br>
-    <select id="subject-dropdown3"></select>
-    <select id="grade-dropdown3"></select>
-    <br>
-    <select id="subject-dropdown4"></select>
-    <select id="grade-dropdown4"></select>
-    <br>
+        <br>
 
-    <br>
+        <label for="university-type-weight-slider">University Type Weight:</label> <!-- Add label for range slider for university type weight -->
+        <input type="range" id="university-type-weight-slider" name="university-type-weight-slider" min="0" max="100" value="50" oninput="updateUniversityTypeWeight(this.value)"> <!-- Add range slider for university type weight -->
+        <span id="university-type-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
 
-    <label for="tariff-weight-slider">Grades Weight:</label> <!-- Add label for range slider for grades weight -->
-    <input type="range" id="tariff-weight-slider" name="tariff-weight-slider" min="0" max="100" value="50" oninput="updateTariffWeight(this.value)"> <!-- Add range slider for grades weight -->
-    <span id="tariff-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
+        <br>
 
-    <br>
+        <h3>Postcode <input id="postcode-input"/></h3> <!-- Add input field for postcode -->
+        <h3>Preferred Distance (km)
+            <select id="distance-dropdown"> <!-- Add dropdown for preferred distance -->
+                <option value="none"></option>
+                <option value="more than 500">More than 500</option>
+                <option value="400-500">400-500</option>
+                <option value="300-400">300-400</option>
+                <option value="200-300">200-300</option>
+                <option value="100-200">100-200</option>
+                <option value="less than 100">Less than 100</option>
+            </select>
+        </h3>
+
+        <br>
+
+        <label for="distance-weight-slider">Distance Weight:</label> <!-- Add label for range slider for distance weight -->
+        <input type="range" id="distance-weight-slider" name="distance-weight-slider" min="0" max="100" value="50" oninput="updateDistanceWeight(this.value)"> <!-- Add range slider for distance weight -->
+        <span id="distance-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
+
+        <br>
 
 
 
-    
-    <button id="search-button">Search</button> <!-- Add search button -->
-    <button id="reset-button">Reset</button> <!-- Add reset button -->
+        <h3>A-Level Grades</h3>  <!-- Add dropdowns for A-Level grades -->
+        
+        <select id="subject-dropdown1"></select>  <!-- Select element for an A-Level subject -->
+        <select id="grade-dropdown1"></select>
+        <br>
+        <select id="subject-dropdown2"></select>
+        <select id="grade-dropdown2"></select>
+        <br>
+        <select id="subject-dropdown3"></select>
+        <select id="grade-dropdown3"></select>
+        <br>
+        <select id="subject-dropdown4"></select>
+        <select id="grade-dropdown4"></select>
+        <br>
 
-    <h2>Results</h2>
+        <br>
 
-    <img id="spinner" class="spinner" src="/static/assets/spinner.gif" alt="loading" /> <!-- Add spinner gif that plays whilst searching-->
+        <label for="tariff-weight-slider">Grades Weight:</label> <!-- Add label for range slider for grades weight -->
+        <input type="range" id="tariff-weight-slider" name="tariff-weight-slider" min="0" max="100" value="50" oninput="updateTariffWeight(this.value)"> <!-- Add range slider for grades weight -->
+        <span id="tariff-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
 
-    <div id="results">
-        <!-- Results will be displayed here -->
-    
-    </div>
+        <br>
+
+
+
+        
+        <button id="search-button">Search</button> <!-- Add search button -->
+        <button id="reset-button">Reset</button> <!-- Add reset button -->
+
+        <h2>Results</h2>
+
+        <img id="spinner" class="spinner" src="/static/assets/spinner.gif" alt="loading" /> <!-- Add spinner gif that plays whilst searching-->
+
+        <div id="results">
+            <!-- Results will be displayed here -->
+        
+        </div>
+    </section>
 
     <!-- import JavaScript -->
     <script src="/static/index.js"></script> 
