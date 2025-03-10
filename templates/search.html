@@ -28,58 +28,66 @@
     <section class="content">
 
         <div class="search-field">
-            <label for="search-input">Course Name</label>
+            <label for="search-input">Course Name:</label>
             <input class="text-input" name="search-input" id="search-input"/>
         </div>
         
         <div class="search-field">
-            <label for="year-abroad-checkbox name="year-abroad-checkbox">Year Abroad</label> 
+            <label for="year-abroad-checkbox name="year-abroad-checkbox">Year Abroad:</label> 
             <input class="checkbox" id="year-abroad-checkbox" type="checkbox"/>
         </div>    
 
         <div class="search-field">
-            <label for="year-abroad-weight-slider">Year Abroad Weight</label>
+            <label for="year-abroad-weight-slider">Year Abroad Weight:</label>
             <span class="range-slider">
                 <input type="range" id="year-abroad-weight-slider" name="year-abroad-weight-slider" min="0" max="100" value="50" oninput="updateYearAbroadWeight(this.value)"> <!-- Add range slider for year abroad weight -->
                 <span id="year-abroad-weight-value">50</span>
             </span>    
         </div>    
 
-        <br>
+        <div class ="search-field">
+            <label for="course-length-input">Course Length:</label>
+            <input class="text-input name="course-length-input" id="course-length-input"/>
+        </div>
 
 
-        <h3>Course Length <input id="course-length-input"></h3> <!-- Add input field for course length -->
+        <div class="search-field">
+            <label for="course-length-weight-slider">Course Length Weight:</label>
+            <span class="range-slider">
+            <input type="range" id="course-length-weight-slider" name="course-length-weight-slider" min="0" max="100" value="50" oninput="updateCourseLengthWeight(this.value)">
+            <span id="course-length-weight-value">50</span>
+            </span>
+        </div>
 
-        <br>
-
-        <!-- Add range slider -->
-        <label for="course-length-weight-slider">Course Length Weight:</label> <!-- Add label for range slider for course length weight -->
-        <input type="range" id="course-length-weight-slider" name="course-length-weight-slider" min="0" max="100" value="50" oninput="updateCourseLengthWeight(this.value)"> <!-- Add range slider for course length weight -->
-        <span id="course-length-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
-
-        <br>
-
-
-        <h3>University Type  <!-- Add dropdown for university type -->
+        <div class="search-field">
+            <label for university-type-dropdown>University Type:</label>
             <select id="university-type-dropdown">
                 <option value="campus">Campus</option>
                 <option value="city">City</option>
                 <option value="collegic">Collegic</option>
                 <option value="distance">Distance</option>
             </select>
-        </h3>
+        </div>
 
-        <br>
 
-        <label for="university-type-weight-slider">University Type Weight:</label> <!-- Add label for range slider for university type weight -->
-        <input type="range" id="university-type-weight-slider" name="university-type-weight-slider" min="0" max="100" value="50" oninput="updateUniversityTypeWeight(this.value)"> <!-- Add range slider for university type weight -->
-        <span id="university-type-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
+        <div class="search-field">
+            <label for="university-type-weight-slider">University Type Weight:</label> <!-- Add label for range slider for university type weight -->
+            <span class="range-slider">
+            <input type="range" id="university-type-weight-slider" name="university-type-weight-slider" min="0" max="100" value="50" oninput="updateUniversityTypeWeight(this.value)"> <!-- Add range slider for university type weight -->
+            <span id="university-type-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
+            </span>
+        </div>
+        
 
-        <br>
+        <div class="search-field">
+            <label for="postcode-input">Postcode:</label>
+            <input class="text-input" id="postcode-input"/>
+        </div>
 
-        <h3>Postcode <input id="postcode-input"/></h3> <!-- Add input field for postcode -->
-        <h3>Preferred Distance (km)
-            <select id="distance-dropdown"> <!-- Add dropdown for preferred distance -->
+
+        <div class ="search-field">
+            <label for="distance-dropdown">Preferred Distance (km):</label>
+            <select id="distance-dropdown">
                 <option value="none"></option>
                 <option value="more than 500">More than 500</option>
                 <option value="400-500">400-500</option>
@@ -88,51 +96,69 @@
                 <option value="100-200">100-200</option>
                 <option value="less than 100">Less than 100</option>
             </select>
-        </h3>
-
-        <br>
-
-        <label for="distance-weight-slider">Distance Weight:</label> <!-- Add label for range slider for distance weight -->
-        <input type="range" id="distance-weight-slider" name="distance-weight-slider" min="0" max="100" value="50" oninput="updateDistanceWeight(this.value)"> <!-- Add range slider for distance weight -->
-        <span id="distance-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
-
-        <br>
+        </div>
 
 
 
-        <h3>A-Level Grades</h3>  <!-- Add dropdowns for A-Level grades -->
+
+
+
+        <div class="search-field">
+            <label for="distance-weight-slider">Distance Weight:</label> <!-- Add label for range slider for distance weight -->
+            <span class="range-slider">
+                <input type="range" id="distance-weight-slider" name="distance-weight-slider" min="0" max="100" value="50" oninput="updateDistanceWeight(this.value)"> <!-- Add range slider for distance weight -->
+                <span id="distance-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
+            </span>
+        </div>
+
+
+        <h3>A-Level Grades:</h3>  <!-- Add dropdowns for A-Level grades -->
+   
+        <div class="search-field">
+            <select id="subject-dropdown1"></select>  <!-- Select element for an A-Level subject -->
+            <select id="grade-dropdown1"></select>
+        </div>
+
         
-        <select id="subject-dropdown1"></select>  <!-- Select element for an A-Level subject -->
-        <select id="grade-dropdown1"></select>
-        <br>
-        <select id="subject-dropdown2"></select>
-        <select id="grade-dropdown2"></select>
-        <br>
-        <select id="subject-dropdown3"></select>
-        <select id="grade-dropdown3"></select>
-        <br>
-        <select id="subject-dropdown4"></select>
-        <select id="grade-dropdown4"></select>
-        <br>
+        <div class="search-field">
+            <select id="subject-dropdown2"></select>
+            <select id="grade-dropdown2"></select>
+        </div>
 
-        <br>
+        <div class="search-field">
+            <select id="subject-dropdown3"></select>
+            <select id="grade-dropdown3"></select>
+        </div>
 
-        <label for="tariff-weight-slider">Grades Weight:</label> <!-- Add label for range slider for grades weight -->
-        <input type="range" id="tariff-weight-slider" name="tariff-weight-slider" min="0" max="100" value="50" oninput="updateTariffWeight(this.value)"> <!-- Add range slider for grades weight -->
-        <span id="tariff-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
+        <div class="search-field">
+            <select id="subject-dropdown4"></select>
+            <select id="grade-dropdown4"></select>
+        </div>
 
-        <br>
+
+
+        <div class="search-field">
+            <label for="tariff-weight-slider">Grades Weight:</label> <!-- Add label for range slider for grades weight -->
+            <span class="range-slider">
+                <input type="range" id="tariff-weight-slider" name="tariff-weight-slider" min="0" max="100" value="50" oninput="updateTariffWeight(this.value)"> <!-- Add range slider for grades weight -->
+                <span id="tariff-weight-value">50</span> <!-- Add span to display the value of the range slider default value is 50 -->
+            </span>
+        </div>
+
+   
 
 
 
         
         <button id="search-button">Search</button> <!-- Add search button -->
         <button id="reset-button">Reset</button> <!-- Add reset button -->
+        <br>
 
         <h2>Results</h2>
+        <br>
 
         <img id="spinner" class="spinner" src="/static/assets/spinner.gif" alt="loading" /> <!-- Add spinner gif that plays whilst searching-->
-
+        
         <div id="results">
             <!-- Results will be displayed here -->
         
