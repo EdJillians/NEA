@@ -82,6 +82,10 @@ body {
     margin: 0;
 }
 
+.search-field .dropdown {
+    padding: 5px;
+}
+
 .range-slider {
     display: flex;
     align-items: center;
