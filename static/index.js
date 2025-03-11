@@ -1,4 +1,5 @@
 const LOCAL_STORAGE_KEY = 'universityCourseSearch'; // Key for local storage
+const FAVOURITE_COURSES_STORAGE_KEY = 'favouriteCourses'; // Key for favourite courses
 
 const showSpinner = () => // Show spinner
     document.getElementById("spinner").classList.add("spinner-visible");
@@ -129,10 +130,52 @@ const getValidationErrors = (form) => {
         errors.push('Please enter at least 3 A-level grades.');
     }
 
-
     return errors;
 }
 
+/* Favourite courses */
+const addFavouriteCourse = (course) => {
+    let favouriteCourses = localStorage.getItem(FAVOURITE_COURSES_STORAGE_KEY);
+    console.log(favouriteCourses);
+    if (favouriteCourses) {
+        favouriteCourses = JSON.parse(favouriteCourses);
+    } else {
+        favouriteCourses = [];
+    }
+    favouriteCourses.push(course);
+    localStorage.setItem(FAVOURITE_COURSES_STORAGE_KEY, JSON.stringify(favouriteCourses));
+}
+
+const removeFavouriteCourse = (id) => {
+    let favouriteCourses = localStorage.getItem(FAVOURITE_COURSES_STORAGE_KEY);
+    if (!favouriteCourses) {
+        return;
+    }
+    favouriteCourses = JSON.parse(favouriteCourses);
+    favouriteCourses = favouriteCourses.filter(course => course.course_id !== id);
+    localStorage.setItem(FAVOURITE_COURSES_STORAGE_KEY, JSON.stringify(favouriteCourses));
+}
+
+const isFavouriteCourse = (id) => {
+    let favouriteCourses = localStorage.getItem(FAVOURITE_COURSES_STORAGE_KEY);
+    if (!favouriteCourses) {
+        return false;
+    }
+    favouriteCourses = JSON.parse(favouriteCourses);
+    return favouriteCourses.some(course => course.course_id === id);
+}
+
+const getFavouriteCourses = () => {
+    let favouriteCourses = localStorage.getItem(FAVOURITE_COURSES_STORAGE_KEY);
+    if (!favouriteCourses) {
+        return [];
+    }
+    return favouriteCourses;
+}
+
+const clearFavouriteCourses = () => {
+    localStorage.removeItem(FAVOURITE_COURSES_STORAGE_KEY);
+}
 
 // Populate form with saved values
 document.addEventListener('DOMContentLoaded', () => {
@@ -281,14 +324,29 @@ document.getElementById('search-button').addEventListener('click', async () => {
             </ul>
             </div>
             <button class="dismiss-btn">Dismiss</button>
+            <img class="favourite-btn" src="/static/assets/favourite.svg" alt="Favourite" />
+            <img class="unfavourite-btn" src="/static/assets/favourite-filled.svg" alt="Unfavourite" />
         `;
 
         results.appendChild(resultBox);
+
+        if (isFavouriteCourse(course.course_id)) {
+            resultBox.classList.add('favourite');
+        }
 
         resultBox.querySelector('.dismiss-btn').addEventListener('click', () => {
             resultBox.remove(); // Remove result box when dismiss button is clicked
         });
 
+        resultBox.querySelector('.favourite-btn').addEventListener('click', () => {
+            addFavouriteCourse(course);
+            resultBox.classList.add('favourite');
+        });
+
+        resultBox.querySelector('.unfavourite-btn').addEventListener('click', () => {
+            removeFavouriteCourse(course.course_id);
+            resultBox.classList.remove('favourite');
+        });
         
     });
 
