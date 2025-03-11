@@ -83,7 +83,9 @@ body {
 }
 
 .search-field .dropdown {
+    width: 200px;
     padding: 5px;
+
 }
 
 .range-slider {
@@ -96,13 +98,34 @@ body {
     width: 190px;
 }
 
-
 .result-box {
+    position: relative;
     border: 1px solid black;
     margin: 10px 0;
     padding: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     background-color: lightblue;
+}
+
+.result-box .favourite-btn, .result-box .unfavourite-btn {
+    width: 16px;
+    height: 16px;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    cursor: pointer;
+}
+
+.result-box .unfavourite-btn {
+    display: none;
+}
+
+.result-box.favourite .unfavourite-btn {
+    display: block;
+}
+
+.result-box.favourite .favourite-btn {
+    display: none;
 }
 
 h2 {
@@ -153,3 +176,18 @@ h3 {
 .validation-errors {
     color: darkred;
 }
+
+.favourite-intro {
+    text-align: center;
+}
+
+.favourite-results {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 1px solid lightgrey;
+}
+
+.favourite-results p {
+    text-align: center;
+}
+
