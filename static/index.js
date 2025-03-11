@@ -170,142 +170,18 @@ const getFavouriteCourses = () => {
     if (!favouriteCourses) {
         return [];
     }
-    return favouriteCourses;
+    return JSON.parse(favouriteCourses);
 }
 
 const clearFavouriteCourses = () => {
     localStorage.removeItem(FAVOURITE_COURSES_STORAGE_KEY);
 }
 
-// Populate form with saved values
-document.addEventListener('DOMContentLoaded', () => {
-    const form = loadForm();
-
-    // Populate grade dropdowns dynamically
-    const grades = ["","A*", "A", "B", "C", "D", "E"]; // Grades array
-    for (let i = 1; i <= 4; i++) {
-        const dropdown = document.getElementById(`grade-dropdown${i}`);
-        grades.forEach(grade => {
-            const option = document.createElement('option');
-            option.value = grade;
-            option.textContent = grade;
-            dropdown.appendChild(option);
-        });
-    }
-        // Populate subject dropdowns dynamically
-        const subjects = [ 
-            "","Biology", "Chemistry", "Physics", "Environmental Science", "Geology", "Psychology", // Subjects array
-            "Mathematics", "Further Mathematics", "Statistics", "History", "Geography", 
-            "Religious Studies", "Philosophy", "Politics", "Sociology", "Law", 
-            "Classical Civilisation", "English Language", "English Literature", "French", 
-            "Spanish", "German", "Italian", "Russian", "Chinese", "Japanese", "Arabic", 
-            "Latin", "Ancient Greek", "Welsh (First Language)", "Welsh (Second Language)", 
-            "Art and Design", "Fine Art", "Graphic Communication", "Photography", "Textiles", 
-            "Drama and Theatre Studies", "Music", "Film Studies", "Media Studies", 
-            "Economics", "Business Studies", "Physical Education (PE)", "Computer Science", 
-            "Design and Technology (Product Design)", "Electronics"
-        ];
-        
-        for (let i = 1; i <= 4; i++) {
-            const dropdown = document.getElementById(`subject-dropdown${i}`);
-            subjects.forEach(subject => {
-                const option = document.createElement('option');
-                option.value = subject;
-                option.textContent = subject;
-                dropdown.appendChild(option);
-            });
-        }
+const createResultsDisplay = (courses, element) => {
     
-    document.getElementById('search-input').value = form.search_term || '';
-    document.getElementById('year-abroad-checkbox').checked = form.year_abroad;
-    document.getElementById('course-length-input').value = form.course_length || '';
-    document.getElementById('university-type-dropdown').value = form.university_type;
-    if (form.postcode){
-        document.getElementById('postcode-input').value = form.postcode;
-    }
-    
-    document.getElementById('distance-dropdown').value = form.preferred_distance;
+    element.innerHTML = '';
 
-    if(form.subject && form.subject.length == 4) {
-        document.getElementById('subject-dropdown1').value = form.subject[0];
-        document.getElementById('subject-dropdown2').value = form.subject[1];
-        document.getElementById('subject-dropdown3').value = form.subject[2];
-        document.getElementById('subject-dropdown4').value = form.subject[3];
-    }
-    
-    if (form.grades && form.grades.length == 4) {
-        document.getElementById('grade-dropdown1').value = form.grades[0];
-        document.getElementById('grade-dropdown2').value = form.grades[1];
-        document.getElementById('grade-dropdown3').value = form.grades[2];
-        document.getElementById('grade-dropdown4').value = form.grades[3];
-    }
-
-    
-    document.getElementById('course-length-weight-slider').value = form.course_length_weight || 50;
-    document.getElementById('course-length-weight-value').textContent = form.course_length_weight || 50;
-
-    document.getElementById('distance-weight-slider').value = form.distance_weight || 50;
-    document.getElementById('distance-weight-value').textContent = form.distance_weight || 50;
-
-    document.getElementById('tariff-weight-slider').value = form.tariff_weight || 50;
-    document.getElementById('tariff-weight-value').textContent = form.tariff_weight || 50;
-
-    document.getElementById('university-type-weight-slider').value = form.university_type_weight || 50;
-    document.getElementById('university-type-weight-value').textContent = form.university_type_weight || 50; // default value is 50 for the sliders
-
-    document.getElementById('year-abroad-weight-slider').value = form.year_abroad_weight|| 50;
-    document.getElementById('year-abroad-weight-value').textContent = form.year_abroad_weight || 50;
-});
-
-// Save form when any input changes
-document.querySelectorAll('input, select').forEach(element => {
-    element.addEventListener('change', saveFormToLocalStorage);
-});
-
-
-// Search button event listener
-document.getElementById('search-button').addEventListener('click', async () => {
-    saveFormToLocalStorage();
-    const form = loadForm();
-
-    const resourceUrl = 'http://127.0.0.1:5000/courses/search'; // URL for the API  
-
-    // Validate the user input:
-    const validationErrors = getValidationErrors(form);
-    if (validationErrors.length > 0) {
-        const results = document.getElementById('results');
-        results.innerHTML = `<div class="validation-errors">${validationErrors.join(". ")}</div>`;
-        return;
-    }
-
-    let response, json;
-    try {
-        showSpinner(); // Show spinner
-
-        response = await fetch(resourceUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(form)
-        });
-        console.log(response);
-        if (!response.ok) {
-            alert("An error occurred while fetching the data");
-            hideSpinner(); // Hide spinner on error
-            return;
-        }
-
-        json = await response.json();
-    } catch (error) {
-        alert("An error occurred: " + error.message);
-        hideSpinner(); // Hide spinner on error
-        return;
-    }
-
-    hideSpinner(); // Hide spinner on success
-    const results = document.getElementById('results');
-    results.innerHTML = '';
-
-    json.forEach(course => { // Display results in the results box
+    courses.forEach(course => { // Display results in the results box
         const resultBox = document.createElement('div');
         resultBox.className = 'result-box';
         resultBox.innerHTML = `
@@ -328,7 +204,7 @@ document.getElementById('search-button').addEventListener('click', async () => {
             <img class="unfavourite-btn" src="/static/assets/favourite-filled.svg" alt="Unfavourite" />
         `;
 
-        results.appendChild(resultBox);
+        element.appendChild(resultBox);
 
         if (isFavouriteCourse(course.course_id)) {
             resultBox.classList.add('favourite');
@@ -353,11 +229,152 @@ document.getElementById('search-button').addEventListener('click', async () => {
     document.querySelectorAll('.alternative-courses').forEach(element => {
         element.addEventListener('click', () => toggleAlternativeCourses(element));
     });
-    
-});
+}
 
-// Reset button event listener
-document.getElementById('reset-button').addEventListener('click', () => {
-    localStorage.removeItem(LOCAL_STORAGE_KEY); // Remove form data from local storage
-    location.reload(); // Reload the page
-});
+const initHomePage = () => {
+    document.addEventListener('DOMContentLoaded', () => {
+        const favouriteCourses = getFavouriteCourses();
+        const results = document.getElementById('results');
+        if (favouriteCourses.length > 0) {
+            createResultsDisplay(favouriteCourses, results);
+        }
+    });
+}
+
+// Populate form with saved values
+const initSearchPage = () => {
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = loadForm();
+
+        // Populate grade dropdowns dynamically
+        const grades = ["","A*", "A", "B", "C", "D", "E"]; // Grades array
+        for (let i = 1; i <= 4; i++) {
+            const dropdown = document.getElementById(`grade-dropdown${i}`);
+            grades.forEach(grade => {
+                const option = document.createElement('option');
+                option.value = grade;
+                option.textContent = grade;
+                dropdown.appendChild(option);
+            });
+        }
+            // Populate subject dropdowns dynamically
+            const subjects = [ 
+                "","Biology", "Chemistry", "Physics", "Environmental Science", "Geology", "Psychology", // Subjects array
+                "Mathematics", "Further Mathematics", "Statistics", "History", "Geography", 
+                "Religious Studies", "Philosophy", "Politics", "Sociology", "Law", 
+                "Classical Civilisation", "English Language", "English Literature", "French", 
+                "Spanish", "German", "Italian", "Russian", "Chinese", "Japanese", "Arabic", 
+                "Latin", "Ancient Greek", "Welsh (First Language)", "Welsh (Second Language)", 
+                "Art and Design", "Fine Art", "Graphic Communication", "Photography", "Textiles", 
+                "Drama and Theatre Studies", "Music", "Film Studies", "Media Studies", 
+                "Economics", "Business Studies", "Physical Education (PE)", "Computer Science", 
+                "Design and Technology (Product Design)", "Electronics"
+            ];
+            
+            for (let i = 1; i <= 4; i++) {
+                const dropdown = document.getElementById(`subject-dropdown${i}`);
+                subjects.forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = subject;
+                    option.textContent = subject;
+                    dropdown.appendChild(option);
+                });
+            }
+        
+        document.getElementById('search-input').value = form.search_term || '';
+        document.getElementById('year-abroad-checkbox').checked = form.year_abroad;
+        document.getElementById('course-length-input').value = form.course_length || '';
+        document.getElementById('university-type-dropdown').value = form.university_type;
+        if (form.postcode){
+            document.getElementById('postcode-input').value = form.postcode;
+        }
+        
+        document.getElementById('distance-dropdown').value = form.preferred_distance;
+
+        if(form.subject && form.subject.length == 4) {
+            document.getElementById('subject-dropdown1').value = form.subject[0];
+            document.getElementById('subject-dropdown2').value = form.subject[1];
+            document.getElementById('subject-dropdown3').value = form.subject[2];
+            document.getElementById('subject-dropdown4').value = form.subject[3];
+        }
+        
+        if (form.grades && form.grades.length == 4) {
+            document.getElementById('grade-dropdown1').value = form.grades[0];
+            document.getElementById('grade-dropdown2').value = form.grades[1];
+            document.getElementById('grade-dropdown3').value = form.grades[2];
+            document.getElementById('grade-dropdown4').value = form.grades[3];
+        }
+
+        
+        document.getElementById('course-length-weight-slider').value = form.course_length_weight || 50;
+        document.getElementById('course-length-weight-value').textContent = form.course_length_weight || 50;
+
+        document.getElementById('distance-weight-slider').value = form.distance_weight || 50;
+        document.getElementById('distance-weight-value').textContent = form.distance_weight || 50;
+
+        document.getElementById('tariff-weight-slider').value = form.tariff_weight || 50;
+        document.getElementById('tariff-weight-value').textContent = form.tariff_weight || 50;
+
+        document.getElementById('university-type-weight-slider').value = form.university_type_weight || 50;
+        document.getElementById('university-type-weight-value').textContent = form.university_type_weight || 50; // default value is 50 for the sliders
+
+        document.getElementById('year-abroad-weight-slider').value = form.year_abroad_weight|| 50;
+        document.getElementById('year-abroad-weight-value').textContent = form.year_abroad_weight || 50;
+    });
+
+    // Save form when any input changes
+    document.querySelectorAll('input, select').forEach(element => {
+        element.addEventListener('change', saveFormToLocalStorage);
+    });
+
+    // Search button event listener
+    document.getElementById('search-button').addEventListener('click', async () => {
+        saveFormToLocalStorage();
+        const form = loadForm();
+
+        const resourceUrl = 'http://127.0.0.1:5000/courses/search'; // URL for the API  
+
+        // Validate the user input:
+        const validationErrors = getValidationErrors(form);
+        if (validationErrors.length > 0) {
+            const results = document.getElementById('results');
+            results.innerHTML = `<div class="validation-errors">${validationErrors.join(". ")}</div>`;
+            return;
+        }
+
+        let response, courses;
+        try {
+            showSpinner(); // Show spinner
+
+            response = await fetch(resourceUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(form)
+            });
+            console.log(response);
+            if (!response.ok) {
+                alert("An error occurred while fetching the data");
+                hideSpinner(); // Hide spinner on error
+                return;
+            }
+
+            courses = await response.json();
+        } catch (error) {
+            alert("An error occurred: " + error.message);
+            hideSpinner(); // Hide spinner on error
+            return;
+        }
+
+        hideSpinner(); // Hide spinner on success
+        
+        const results = document.getElementById('results');
+
+        createResultsDisplay(courses, results);    
+    });
+
+    // Reset button event listener
+    document.getElementById('reset-button').addEventListener('click', () => {
+        localStorage.removeItem(LOCAL_STORAGE_KEY); // Remove form data from local storage
+        location.reload(); // Reload the page
+    });
+}
