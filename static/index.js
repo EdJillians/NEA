@@ -219,6 +219,9 @@ const createResultsDisplay = (courses, element) => {
             <div class="alternative-courses">${getAlternativeCourses(course)}</div>
 
             <div class="requirements">${getRequirements(course)}</div>
+
+            ${course.warnings && course.warnings.length > 0 ? `<div class="warnings"><span class="label">Warning: </span><span>${course.warnings}</span></div>` : ''}
+
             <button class="dismiss-btn">Dismiss</button>
 
             <img class="favourite-btn" src="/static/assets/favourite.svg" alt="Favourite" />

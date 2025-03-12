@@ -215,7 +215,7 @@ h3 {
 }
 
 .search-button {
-    padding: 20px 40px;
+    padding: 16px 30px;
     background-color: darkgreen;
     color: white;
     border: none;
@@ -225,7 +225,7 @@ h3 {
     font-size: 15px;
 }
 .reset-button {
-    padding: 20px 40px;
+    padding: 16px 30px;
     background-color: darkred;
     color: white;
     border: none;

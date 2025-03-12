@@ -255,7 +255,8 @@ def populate_requirement(conn): # this function populates the requirement table 
         query = """
         SELECT course_id, tariff_001, tariff_048, tariff_064, tariff_080, tariff_096, tariff_112, tariff_128, tariff_144, tariff_160, tariff_176, tariff_192, tariff_208, tariff_224, tariff_240
         FROM course
-        WHERE course_name ILIKE '%mathematics%' OR course_name ILIKE '%physics%' OR course_name ILIKE '%computer science%';
+        WHERE course_name ILIKE '%mathematics%' OR course_name ILIKE '%physics%' OR course_name ILIKE '%computer science%' OR course_name ILIKE '%engineering%' OR course_name ILIKE '%chemistry%'
+        OR course_name ILIKE '%astrophysics%' OR course_name ILIKE '%astronomy%' OR course_name ILIKE '%Physics with Astrophysics%';
         """
         cur.execute(query)
         courses = cur.fetchall()
