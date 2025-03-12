@@ -53,8 +53,8 @@ class Database: # this class is used to interact with the database
         sorted_indices = similarities.argsort()[0][::-1]
         
         # Filter out courses with low similarity scores
-        similar_names = [all_course_names[index] for index in sorted_indices if similarities[0][index] > 0.1]
-        similarity_scores = [similarities[0][index] for index in sorted_indices if similarities[0][index] > 0.1]
+        similar_names = [all_course_names[index] for index in sorted_indices if similarities[0][index] > 0.3]
+        similarity_scores = [similarities[0][index] for index in sorted_indices if similarities[0][index] > 0.3]
 
         # Fetch matching course details
         placeholders = ", ".join(["%s"] * len(similar_names))
@@ -178,7 +178,7 @@ class Course:
         university_type_weight = float(data.get('university_type_weight', 50))
         year_abroad_weight = float(data.get('year_abroad_weight', 50))
         course_length_weight = float(data.get('course_length_weight', 50))
-        similarity_weight = 1 # you can adjust this weight as needed
+        similarity_weight = 1 # I have made this 1 because it was affecting the score in an undesirable way
 
         # Calculate final score
         total_weight = distance_weight + tariff_weight + university_type_weight + year_abroad_weight + course_length_weight + similarity_weight
