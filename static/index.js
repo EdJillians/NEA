@@ -107,9 +107,32 @@ const getAlternativeCourses = (course) => {
     `;
 }
 
+const getRequirements = (course) => {
+    if (!course.requirements || course.requirements.length == 0) {
+        return '';
+    }
+
+    return `
+        <div class="label"><img class="requirements-arrow" src="/static/assets/arrow.svg"/>Requirements:</div>
+        <ul class="requirements-list hidden">
+            ${course.requirements.map(req => `<li>${req.subject}: ${req.grade}</li>`).join('')}
+        </ul>  
+    `;
+}
+
+
+
+
+
+
 const toggleAlternativeCourses = (element) => {
     const alternativeCourses = element.querySelector('.alternative-courses-list');
     alternativeCourses.classList.toggle('hidden');
+}
+
+const toggleRequirements = (element) => {
+    const requirements = element.querySelector('.requirements-list');
+    requirements.classList.toggle('hidden');
 }
 
 const getValidationErrors = (form) => {
@@ -185,21 +208,19 @@ const createResultsDisplay = (courses, element) => {
         const resultBox = document.createElement('div');
         resultBox.className = 'result-box';
         resultBox.innerHTML = `
-            <div class="name"><span class="label">Name: </span><span>${course.course_name}</span></div>
-            <div class="university"><span class="label">University: </span><span>${course.university_name}</span></div>
+            <div class="name"><span class="label"></span><a href="${course.course_url}" style="font-size: 30px; font-weight: bold;">${course.course_name}</a></div>
+            
+            <div class="university"><span class="label"></span><span style="font-size: 20px;">${course.university_name}</span></div>
             <div class="course-length"><span class="label">Course Length: </span><span>${course.course_length} years</span></div>
             <div class="year-abroad"><span class="label">Year Abroad: </span><span>${course.study_abroad}</span></div>
-            <div class="url"><span class="label">URL: </span><a href="${course.course_url}">${course.course_url}</a></div>
             <div class="distance"><span class="label">Distance: </span><span>${course.distance}</span></div>
             <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
+            
             <div class="alternative-courses">${getAlternativeCourses(course)}</div>
-            <div class="requirements">
-            <span class="label">Requirements:</span>
-            <ul>
-                ${course.requirements.map(req => `<li>${req.subject}: ${req.grade}</li>`).join('')}
-            </ul>
-            </div>
+
+            <div class="requirements">${getRequirements(course)}</div>
             <button class="dismiss-btn">Dismiss</button>
+
             <img class="favourite-btn" src="/static/assets/favourite.svg" alt="Favourite" />
             <img class="unfavourite-btn" src="/static/assets/favourite-filled.svg" alt="Unfavourite" />
         `;
@@ -228,6 +249,10 @@ const createResultsDisplay = (courses, element) => {
 
     document.querySelectorAll('.alternative-courses').forEach(element => {
         element.addEventListener('click', () => toggleAlternativeCourses(element));
+
+    });
+    document.querySelectorAll('.requirements').forEach(element => {
+        element.addEventListener('click', () => toggleRequirements(element));
     });
 }
 
