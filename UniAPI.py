@@ -47,7 +47,7 @@ class Database: # this class is used to interact with the database
             if row[0] not in all_course_names:
                 all_course_names.append(row[0]) 
         # Find the closest matches to the search term
-        print(search_term)
+        #print(search_term)
         # Initialize TF-IDF Vectorizer
         vectorizer = TfidfVectorizer()
         # Create TF-IDF matrix for courses and the search query
@@ -93,7 +93,6 @@ class Database: # this class is used to interact with the database
             # Retrieve course requirements
             self.cursor.execute("SELECT a_level_subject, grade FROM requirement WHERE course_id = %s", (course_id,))
             requirements = [{"subject": req[0], "grade": req[1]} for req in self.cursor.fetchall()]
-            print(requirements)
             # Retrieve university locations
             self.cursor.execute("SELECT latitude, longitude, location_name FROM location WHERE university_id = %s", (university_id,))
             locations = [{"latitude": loc[0], "longitude": loc[1],"name": loc[2]} for loc in self.cursor.fetchall()]
@@ -177,7 +176,7 @@ class Course:
         return final_score
 
     def __calculate_distance_score(self, data):
-        print(self.__distance)
+        #print(self.__distance)
         if data.get('postcode') and data.get('preferred_distance'): # check if the user has entered a postcode and a preferred distance
             self.__calculate_distance(data)
             if self.__distance == 0:
@@ -364,7 +363,7 @@ class CourseSearchResource(Resource): # this is the class that is used to search
     def post(self): # this is the method that is called when a POST request is made to the endpoint it is the main method that is called when the user searches for courses
 
         data = request.get_json()
-        print(data)
+        #print(data)
         if not data or 'search_term' not in data:
             abort(400, message="No search term provided")
         
