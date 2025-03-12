@@ -41,13 +41,8 @@ class Database: # this class is used to interact with the database
         
         # Retrieve all course names from the database
         self.cursor.execute("SELECT course_name FROM course")
-        #all_course_names = [row[0] for row in self.cursor.fetchall()]
-        all_course_names = []
-        for row in self.cursor.fetchall():
-            if row[0] not in all_course_names:
-                all_course_names.append(row[0]) 
-        # Find the closest matches to the search term
-        #print(search_term)
+        all_course_names = [row[0] for row in self.cursor.fetchall()]
+        
         # Initialize TF-IDF Vectorizer
         vectorizer = TfidfVectorizer()
         # Create TF-IDF matrix for courses and the search query
@@ -56,15 +51,10 @@ class Database: # this class is used to interact with the database
         similarities = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1])
         # Rank courses based on similarity score
         sorted_indices = similarities.argsort()[0][::-1]
-        # Display ranked results with non-zero scores
         
-        #print("Top Matching Courses:") # this was used for testing
-        # for index in sorted_indices: 
-        #     if similarities[0][index] > 0:
-        #         print(f"- {all_course_names[index]} (Score: {similarities[0][index]:.2f})")
-
-        #Filter out courses with low similarity scores
+        # Filter out courses with low similarity scores
         similar_names = [all_course_names[index] for index in sorted_indices if similarities[0][index] > 0.1]
+        similarity_scores = [similarities[0][index] for index in sorted_indices if similarities[0][index] > 0.1]
 
         # Fetch matching course details
         placeholders = ", ".join(["%s"] * len(similar_names))
@@ -74,15 +64,14 @@ class Database: # this class is used to interact with the database
             JOIN university u ON c.university_id = u.university_id
             WHERE c.course_name IN ({placeholders})
         """
-        #print(placeholders)
-        #print(query)
+
         if not similar_names:
             return []
         self.cursor.execute(query, tuple(similar_names))
         results = self.cursor.fetchall()
 
         courses = []
-        for row in results:
+        for row, similarity_score in zip(results, similarity_scores):
             course_id, course_name, course_url, course_length, study_abroad, university_id, university_name, university_type = row
 
             # Retrieve course tariffs
@@ -102,14 +91,14 @@ class Database: # this class is used to interact with the database
             # Create University and Course objects
             university = University(university_id, university_name, "", university_type)
             university.set_locations(locations) # this sets the locations for the university
-            course = Course(course_id, course_name, course_url, course_length, study_abroad, university_id, university, requirements, **tariffs)
+            course = Course(course_id, course_name, course_url, course_length, study_abroad, university_id, university, requirements, similarity_score, **tariffs)
 
             courses.append(course)
 
         return courses
 
 class Course:
-    def __init__(self, course_id, course_name, course_url, course_length, study_abroad, university_id, uni ,requirements,**tariffs):
+    def __init__(self, course_id, course_name, course_url, course_length, study_abroad, university_id, uni ,requirements, similarity_score,**tariffs):
         self.course_id = course_id #course_id is kept as a public attribute because it is used to identify the course
         self.__course_name = course_name
         self.__course_length = course_length
@@ -122,6 +111,8 @@ class Course:
         self.__distance=0 # this is the distance from the user's location to the university
         self.__university=uni # this is the university object that the course belongs to
         self.__requirements = requirements # this is a list of dictionaries containing the requirements for the course
+        self.__warnings = [] # this is a list of potential discrepancies between the user's grades and the course's requirements
+        self.__similarity_score = similarity_score # this is the similarity score between the course name and the user's search term
 
     def convert_to_json(self): # this method converts the object into a dictionary that can be converted to JSON
         return {
@@ -137,19 +128,49 @@ class Course:
             "university_name": self.__university.get_university_name(), # this is the name of the university that the course belongs to
             "university_type": self.__university.get_university_type(), # this is the type of the university that the course belongs to
             "requirements": self.__requirements,
-            "tucked_courses": [course.convert_to_json() for course in self.__tucked_courses] # this is a list of the courses that have been tucked into this course
+            "tucked_courses": [course.convert_to_json() for course in self.__tucked_courses], # this is a list of the courses that have been tucked into this course
+            "warnings": self.__warnings 
         }
+
+    def check_requirements(self, data): # this method checks if the user's grades meet the course's requirements
+
+        #self.__warnings.append("This is a test warning") # this is a test warning
+        possible_grades =['A*','A','B','C','D','E']
+        user_grades = data.get('grades')
+        user_subjects = data.get('subject')
+        if not user_grades or not user_subjects and self.__requirements:
+            self.__warnings.append("This course has requirements but you have not entered your grades")
+            return self.__warnings
+
+
+
+        for req in self.__requirements:
+            if req['subject'] not in user_subjects:
+                self.__warnings.append(f"This course requires {req['subject']}")
+                continue
+            if req['subject'] in user_subjects:
+                grade_index = possible_grades.index(req['grade'])
+                user_grade = user_grades[user_subjects.index(req['subject'])]
+                user_grade_index = possible_grades.index(user_grade)
+
+                if user_grade_index > grade_index:
+                    self.__warnings.append(f"This course requires {req['grade']} in {req['subject']} but you have {user_grade}")
+
+        
+        return self.__warnings
+
 
 
 
 
     def calculate_score(self, data):
         # calculate scores
-        distance_score = self.__calculate_distance_score(data) #
-        tariff_score = self.__calculate_tariff_score(data) 
-        university_type_score = self.__calculate_university_type_score(data) 
-        year_abroad_score = self.__calculate_year_abroad_score(data) 
-        course_length_score = self.__calculate_course_length_score(data) 
+        distance_score = self.__calculate_distance_score(data)
+        tariff_score = self.__calculate_tariff_score(data)
+        university_type_score = self.__calculate_university_type_score(data)
+        year_abroad_score = self.__calculate_year_abroad_score(data)
+        course_length_score = self.__calculate_course_length_score(data)
+        similarity_score = self.__similarity_score # use the stored similarity score
 
         # Dynamic weights based on user preferences
         distance_weight = float(data.get('distance_weight', 50))
@@ -157,10 +178,10 @@ class Course:
         university_type_weight = float(data.get('university_type_weight', 50))
         year_abroad_weight = float(data.get('year_abroad_weight', 50))
         course_length_weight = float(data.get('course_length_weight', 50))
-        #print(distance_weight, tariff_weight, university_type_weight, year_abroad_weight, course_length_weight) 
+        similarity_weight = 1 # you can adjust this weight as needed
 
         # Calculate final score
-        total_weight = distance_weight + tariff_weight + university_type_weight + year_abroad_weight + course_length_weight
+        total_weight = distance_weight + tariff_weight + university_type_weight + year_abroad_weight + course_length_weight + similarity_weight
         if total_weight == 0:
             final_score = 0
         else:
@@ -169,7 +190,8 @@ class Course:
                 tariff_score * tariff_weight +
                 university_type_score * university_type_weight +
                 year_abroad_score * year_abroad_weight +
-                course_length_score * course_length_weight
+                course_length_score * course_length_weight +
+                similarity_score * similarity_weight
             ) / total_weight
 
         self.__score = final_score
@@ -363,7 +385,7 @@ class CourseSearchResource(Resource): # this is the class that is used to search
     def post(self): # this is the method that is called when a POST request is made to the endpoint it is the main method that is called when the user searches for courses
 
         data = request.get_json()
-        #print(data)
+        print(data)
         if not data or 'search_term' not in data:
             abort(400, message="No search term provided")
         
@@ -379,6 +401,7 @@ class CourseSearchResource(Resource): # this is the class that is used to search
         university_courses = {}
         for course in unique_courses:
             course.calculate_score(data)
+            course.check_requirements(data)
             university_id = course.get_university_id()# this is for tucking courses
             if university_id not in university_courses:
                 university_courses[university_id] = []
