@@ -68,37 +68,62 @@ const saveFormToLocalStorage = () => {
 
 // Update weight values when sliders are moved 
 
+
+/**
+ * Updates the course length weight slider when the user moves it
+ * @function
+ */
+
 const updateTariffWeight = () => {
     const tariffWeight = document.getElementById('tariff-weight-slider').value; 
     document.getElementById('tariff-weight-value').textContent = tariffWeight;
 }
+/**
+ * Updates the course length weight slider when the user moves it
+ * @function
+ */ 
+
 const updateCourseLengthWeight = () => {
     const courseLengthWeight = document.getElementById('course-length-weight-slider').value;
     document.getElementById('course-length-weight-value').textContent = courseLengthWeight;
 }
-
+/**
+ * Updates the distance weight slider when the user moves it
+ * @function
+ */
 const updateDistanceWeight = () => {
     const distanceWeight = document.getElementById('distance-weight-slider').value;
     document.getElementById('distance-weight-value').textContent = distanceWeight;
 }
-
+/**
+ * Updates the university type weight slider when the user moves it
+ * @function
+ */
 const updateUniversityTypeWeight = () => {
     const universityTypeWeight = document.getElementById('university-type-weight-slider').value;
     document.getElementById('university-type-weight-value').textContent = universityTypeWeight;
 }
-
+/**
+ * Updates the year abroad weight slider when the user moves it
+ * @function
+ */
 const updateYearAbroadWeight = () => {
     const yearAbroadWeight = document.getElementById('year-abroad-weight-slider').value;
     document.getElementById('year-abroad-weight-value').textContent = yearAbroadWeight;
 }
 
+
+/**
+ * this function extracts the alternative courses from the courses object
+ * and returns them as a string
+ * @function
+ * @param {*} course 
+ * @returns {string} tucked courses HTML string
+ */
 const getAlternativeCourses = (course) => {
     if (!course.tucked_courses || course.tucked_courses.length == 0) {
         return '';
     }
-
-    // return `Other Courses: ${course.tucked_courses.map(c => JSON.stringify(c)).join(', ')}`;
-
     return `
         <div class="label"><img class="alternative-courses-arrow" src="/static/assets/arrow.svg"/>Alternative Courses at ${course.university_name}:</div>
         <ul class="alternative-courses-list hidden">
@@ -107,6 +132,13 @@ const getAlternativeCourses = (course) => {
     `;
 }
 
+
+/**
+ * Generates the HTML content for displaying course requirements
+ * @function
+ * @param {Object} course 
+ * @returns {string} requirements HTML string
+ */
 const getRequirements = (course) => {
     if (!course.requirements || course.requirements.length == 0) {
         return '';
@@ -122,19 +154,37 @@ const getRequirements = (course) => {
 
 
 
-
-
-
+/**
+ * Toggles the visibility of the alternative courses list when the user 
+ * clicks on the alternative courses button
+ * @function
+ * @param {HTMLElement} element
+ * @returns {void}
+ */
 const toggleAlternativeCourses = (element) => {
     const alternativeCourses = element.querySelector('.alternative-courses-list');
     alternativeCourses.classList.toggle('hidden');
 }
 
+/**
+ * Similar to the toggleAlternativeCourses function, 
+ * this function toggles the visibility of the requirements list
+ * @function
+ * @param {HTMLElement} element
+ * @returns {void}
+ */
 const toggleRequirements = (element) => {
     const requirements = element.querySelector('.requirements-list');
     requirements.classList.toggle('hidden');
 }
 
+
+/**
+ * Validates the user input and returns an array of error messages
+ * @function
+ * @param {Object} form
+ * @returns {Array} errors
+ */
 const getValidationErrors = (form) => {
     const errors = [];
     if (!form.search_term) {
@@ -143,14 +193,17 @@ const getValidationErrors = (form) => {
     if (!form.course_length || (isNaN(form.course_length) || form.course_length < 1 || form.course_length > 8)) {
         errors.push('Course length must be a number of years between 1 and 8.');
     }
-    if (form.postcode.length > 0 && form.postcode.length != 7) {
-        errors.push('Postcode must be 7 characters long.');
+    if (form.postcode.length < 5 || form.postcode.length > 8) {
+        errors.push('Please enter a valid UK postcode.');
     }
     if (form.subject.filter(subject => subject).length < 3) {
         errors.push('Please select at least 3 subjects.');
     }
     if (form.grades.filter(grade => grade).length < 3) {
         errors.push('Please enter at least 3 A-level grades.');
+    }
+    if (form.course_length_weight == 0 && form.distance_weight == 0 && form.tariff_weight == 0 && form.university_type_weight == 0 && form.year_abroad_weight == 0) {
+        errors.push('Please enter at least one weight value greater than 0.');
     }
 
     return errors;
@@ -200,11 +253,16 @@ const clearFavouriteCourses = () => {
     localStorage.removeItem(FAVOURITE_COURSES_STORAGE_KEY);
 }
 
+
+
+
+
+
 const createResultsDisplay = (courses, element) => {
     
     element.innerHTML = '';
 
-    courses.forEach(course => { // Display results in the results box
+    courses.forEach(course => {
         const resultBox = document.createElement('div');
         resultBox.className = 'result-box';
         resultBox.innerHTML = `
@@ -366,7 +424,7 @@ const initSearchPage = () => {
         const validationErrors = getValidationErrors(form);
         if (validationErrors.length > 0) {
             const results = document.getElementById('results');
-            results.innerHTML = `<div class="validation-errors">${validationErrors.join(". ")}</div>`;
+            results.innerHTML = `<div class="validation-errors">${validationErrors.join(" ")}</div>`;
             return;
         }
 

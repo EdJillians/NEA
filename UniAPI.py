@@ -2,7 +2,6 @@ from flask import Flask, jsonify, request, render_template # this is used to cre
 from flask_restful import Api, Resource, abort # this is used to create the API
 
 import psycopg2 as psycopg # this is used to interact with the database
-
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -16,29 +15,13 @@ api = Api(app) # this creates a Flask-RESTful API
 
 class Database: # this class is used to interact with the database
     def __init__(self):
-        self.connection = psycopg.connect("dbname=University user=postgres password=P9@ndalfos")
-        self.cursor = self.connection.cursor()
+        self.connection = psycopg.connect("dbname=University user=postgres password=P9@ndalfos") # connect to the database
+        self.cursor = self.connection.cursor() # create a cursor to interact with the database
 
-    def get_course(self, course_id): # redundant but was used for the CourseResource class
-        self.cursor.execute("SELECT * FROM course WHERE course_id = %s", (course_id,))
-        result = self.cursor.fetchone()
-        if result:
-            course_data = result[:6]
-            tariffs = dict(zip([desc[0] for desc in self.cursor.description[6:]], result[6:]))
-        return Course(*course_data, **tariffs)
-        
 
-    def get_university(self, university_id): # redundant but was used for the UniversityResource class
-        self.cursor.execute("SELECT * FROM university WHERE university_id = %s", (university_id,))
-        result = self.cursor.fetchone()
-        if result:
-            return University(*result)
-        return None
-    
+    def select_courses(self, search_term): 
 
-    def select_courses(self, search_term):
         """Finds courses matching the search term and retrieves relevant details."""
-        
         # Retrieve all course names from the database
         self.cursor.execute("SELECT course_name FROM course")
         all_course_names = [row[0] for row in self.cursor.fetchall()]
@@ -56,7 +39,7 @@ class Database: # this class is used to interact with the database
         similar_names = [all_course_names[index] for index in sorted_indices if similarities[0][index] > 0.3]
         similarity_scores = [similarities[0][index] for index in sorted_indices if similarities[0][index] > 0.3]
 
-        # Fetch matching course details
+        # Fetch matching course details with another query
         placeholders = ", ".join(["%s"] * len(similar_names))
         query = f"""
             SELECT c.course_id, c.course_name, c.course_url, c.course_length, c.study_abroad, c.university_id, u.university_name, u.university_type
@@ -67,11 +50,11 @@ class Database: # this class is used to interact with the database
 
         if not similar_names:
             return []
-        self.cursor.execute(query, tuple(similar_names))
+        self.cursor.execute(query, tuple(similar_names)) #execute the query
         results = self.cursor.fetchall()
 
         courses = []
-        for row, similarity_score in zip(results, similarity_scores):
+        for row, similarity_score in zip(results, similarity_scores): # iterate through the results and create Course objects
             course_id, course_name, course_url, course_length, study_abroad, university_id, university_name, university_type = row
 
             # Retrieve course tariffs
@@ -83,6 +66,7 @@ class Database: # this class is used to interact with the database
             self.cursor.execute("SELECT a_level_subject, grade FROM requirement WHERE course_id = %s", (course_id,))
             requirements = [{"subject": req[0], "grade": req[1]} for req in self.cursor.fetchall()]
             # Retrieve university locations
+
             self.cursor.execute("SELECT latitude, longitude, location_name FROM location WHERE university_id = %s", (university_id,))
             locations = [{"latitude": loc[0], "longitude": loc[1],"name": loc[2]} for loc in self.cursor.fetchall()]
             if not locations:
@@ -93,9 +77,9 @@ class Database: # this class is used to interact with the database
             university.set_locations(locations) # this sets the locations for the university
             course = Course(course_id, course_name, course_url, course_length, study_abroad, university_id, university, requirements, similarity_score, **tariffs)
 
-            courses.append(course)
+            courses.append(course) # add the course to the list of courses
 
-        return courses
+        return courses # return the list of courses
 
 class Course:
     def __init__(self, course_id, course_name, course_url, course_length, study_abroad, university_id, uni ,requirements, similarity_score,**tariffs):
@@ -160,9 +144,6 @@ class Course:
         return self.__warnings
 
 
-
-
-
     def calculate_score(self, data):
         # calculate scores
         distance_score = self.__calculate_distance_score(data)
@@ -192,7 +173,7 @@ class Course:
                 year_abroad_score * year_abroad_weight +
                 course_length_score * course_length_weight +
                 similarity_score * similarity_weight
-            ) / total_weight
+            ) / total_weight # weighted average of the scores
 
         self.__score = final_score
         return final_score
@@ -260,14 +241,13 @@ class Course:
         
         user_location = data.get("coords") #retrieve the user's location from the data
 
-        if not user_location:
+        if not user_location: # if the user's location is not found, set the distance to 0
             self.__distance = 0
             return
         university_coords = self.__university.get_university_coordinates()
-        #print(university_coords)
         user_coords = (user_location.latitude, user_location.longitude)
 
-        self.__distance = geodesic(user_coords, university_coords).km
+        self.__distance = geodesic(user_coords, university_coords).km # calculate the distance between the user's location and the university
         self.__distance = round(self.__distance, 2)
 
 
@@ -340,32 +320,15 @@ class University:
     def get_university_type(self):
         return self.__university_type
     
-    def get_university_coordinates(self):
+    def get_university_coordinates(self): # this is an attempt to get the coordinates of the main campus of the university
         for location in self.__locations:
-            if "main" in location["name"].lower() or self.__university_name.split()[-1].lower() in location["name"].lower():
+            if "main" in location["name"].lower() or self.__university_name.split()[-1].lower() in location["name"].lower(): #this is not perfect
                 return (location["latitude"], location["longitude"])
 
         return (self.__locations[0]["latitude"], self.__locations[0]["longitude"])
 
     def get_university_name(self):
         return self.__university_name
-
-class CourseResource(Resource): # this is the class that is used to get course details it is not currently used
-    def get(self, course_id):
-        db = Database()
-        course = db.get_course(course_id)
-        if course:
-            return jsonify(course.convert_to_json())
-        abort(404, message="Course not found")
-
-
-class UniversityResource(Resource): # this is the class that is used to get university details it is not currently used
-    def get(self, university_id):
-        db = Database()
-        university = db.get_university(university_id)
-        if university:
-            return jsonify(university.convert_to_json())
-        abort(404, message="University not found")
 
 class CourseSearchResource(Resource): # this is the class that is used to search for courses
     def __init__(self):
@@ -466,21 +429,20 @@ class CourseSearchResource(Resource): # this is the class that is used to search
         return result # returns the merged list
 
 
-
-
-api.add_resource(CourseResource, "/course/<string:course_id>")
-api.add_resource(UniversityResource, "/university/<string:university_id>")
-
-
+# this is the endpoint for the API
 api.add_resource(CourseSearchResource, "/courses/search")
 
-@app.route('/')
+
+# add the home page
+@app.route('/') # the home page will be rendered when the user visits the root URL
 def home():
     return render_template('index.html')
 
-@app.route('/search')
+# add the search page
+@app.route('/search') # the search page will be rendered when the user visits the /search URL
 def search():
     return render_template('search.html')
 
+# run the app
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
