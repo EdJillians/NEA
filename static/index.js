@@ -187,13 +187,15 @@ const toggleRequirements = (element) => {
  */
 const getValidationErrors = (form) => {
     const errors = [];
+    const postcodeRegex = /^[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$/i;
+
     if (!form.search_term) {
         errors.push('Please enter a course name to search for.');
     }
     if (!form.course_length || (isNaN(form.course_length) || form.course_length < 1 || form.course_length > 8)) {
         errors.push('Course length must be a number of years between 1 and 8.');
     }
-    if (form.postcode.length < 5 || form.postcode.length > 8) {
+    if (!postcodeRegex.test(form.postcode)) {
         errors.push('Please enter a valid UK postcode.');
     }
     if (form.subject.filter(subject => subject).length < 3) {
@@ -202,6 +204,15 @@ const getValidationErrors = (form) => {
     if (form.grades.filter(grade => grade).length < 3) {
         errors.push('Please enter at least 3 A-level grades.');
     }
+
+
+    for (let i = 0; i < form.subject.length; i++) {
+        if ((form.subject[i] && !form.grades[i]) || (!form.subject[i] && form.grades[i])) {
+            errors.push('Each subject must have a corresponding grade and vice versa.');
+            break;
+        }
+    }
+
     if (form.course_length_weight == 0 && form.distance_weight == 0 && form.tariff_weight == 0 && form.university_type_weight == 0 && form.year_abroad_weight == 0) {
         errors.push('Please enter at least one weight value greater than 0.');
     }
@@ -271,7 +282,7 @@ const createResultsDisplay = (courses, element) => {
             <div class="university"><span class="label"></span><span style="font-size: 20px;">${course.university_name}</span></div>
             <div class="course-length"><span class="label">Course Length: </span><span>${course.course_length} years</span></div>
             <div class="year-abroad"><span class="label">Year Abroad: </span><span>${course.study_abroad}</span></div>
-            <div class="distance"><span class="label">Distance: </span><span>${course.distance}</span></div>
+            <div class="distance"><span class="label">Distance: </span><span>${course.distance} km</span></div>
             <div class="score"><span class="label">Score: </span><span>${course.score}</span></div>
             
             <div class="alternative-courses">${getAlternativeCourses(course)}</div>
@@ -345,17 +356,16 @@ const initSearchPage = () => {
         }
             // Populate subject dropdowns dynamically
             const subjects = [ 
-                "","Biology", "Chemistry", "Physics", "Environmental Science", "Geology", "Psychology", // Subjects array
-                "Mathematics", "Further Mathematics", "Statistics", "History", "Geography", 
-                "Religious Studies", "Philosophy", "Politics", "Sociology", "Law", 
-                "Classical Civilisation", "English Language", "English Literature", "French", 
-                "Spanish", "German", "Italian", "Russian", "Chinese", "Japanese", "Arabic", 
-                "Latin", "Ancient Greek", "Welsh (First Language)", "Welsh (Second Language)", 
-                "Art and Design", "Fine Art", "Graphic Communication", "Photography", "Textiles", 
-                "Drama and Theatre Studies", "Music", "Film Studies", "Media Studies", 
-                "Economics", "Business Studies", "Physical Education (PE)", "Computer Science", 
-                "Design and Technology (Product Design)", "Electronics"
+                '', 'Accounting', 'Ancient Greek', 'Ancient History', 'Arabic', 'Art and Design', 'Biology',
+                 'Business Studies', 'Chemistry', 'Chinese', 'Classical Civilisation', 'Computer Science',
+                  'Dance', 'Design and Technology (Product Design)', 'Drama and Theatre Studies', 'Economics',
+                   'Electronics', 'English Language', 'English Literature', 'Environmental Science', 'Film Studies',
+                    'Fine Art', 'French', 'Further Mathematics', 'Geography', 'Geology', 'German', 'Graphic Communication',
+                     'History', 'Italian', 'Japanese', 'Latin', 'Law', 'Mathematics', 'Media Studies', 'Music', 'Philosophy',
+                      'Photography', 'Physical Education (PE)', 'Physics', 'Politics', 'Psychology', 'Religious Studies', 'Russian',
+                       'Sociology', 'Spanish', 'Statistics', 'Textiles', 'Welsh (First Language)', 'Welsh (Second Language)'
             ];
+        
             
             for (let i = 1; i <= 4; i++) {
                 const dropdown = document.getElementById(`subject-dropdown${i}`);

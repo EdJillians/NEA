@@ -22,22 +22,19 @@ class Database: # this class is used to interact with the database
     def select_courses(self, search_term): 
 
         """Finds courses matching the search term and retrieves relevant details."""
-        # Retrieve all course names from the database
+        # Retrieve all course names from the database using a query
         self.cursor.execute("SELECT course_name FROM course")
         all_course_names = [row[0] for row in self.cursor.fetchall()]
-        
-        # Initialize TF-IDF Vectorizer
         vectorizer = TfidfVectorizer()
         # Create TF-IDF matrix for courses and the search query
-        tfidf_matrix = vectorizer.fit_transform(all_course_names + [search_term])
+        tfidf_matrix = vectorizer.fit_transform(all_course_names + [search_term]) 
         # Compute cosine similarity between search query and all course titles
         similarities = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1])
         # Rank courses based on similarity score
         sorted_indices = similarities.argsort()[0][::-1]
-        
         # Filter out courses with low similarity scores
-        similar_names = [all_course_names[index] for index in sorted_indices if similarities[0][index] > 0.3]
-        similarity_scores = [similarities[0][index] for index in sorted_indices if similarities[0][index] > 0.3]
+        similar_names = [all_course_names[index] for index in sorted_indices if similarities[0][index] > 0.38] # threshold is set to 0.38 because it gave the best results
+        similarity_scores = [similarities[0][index] for index in sorted_indices if similarities[0][index] > 0.38]
 
         # Fetch matching course details with another query
         placeholders = ", ".join(["%s"] * len(similar_names))

@@ -239,7 +239,7 @@ h3 {
 /* General link styles */
 a {
     color: green; /* Default link color */
-    text-decoration: none; /* Remove underline */
+    text-decoration: underline; /* Underline links */
 }
 
 a:hover {
