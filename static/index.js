@@ -1,13 +1,22 @@
-const LOCAL_STORAGE_KEY = 'universityCourseSearch'; // Key for local storage
-const FAVOURITE_COURSES_STORAGE_KEY = 'favouriteCourses'; // Key for favourite courses
-
+/**
+ * Shows the spinner element by adding the "spinner-visible" class.
+ * @function
+ */
 const showSpinner = () => // Show spinner
     document.getElementById("spinner").classList.add("spinner-visible");
 
+/**
+ * Hides the spinner element by removing the "spinner-visible" class.
+ * @function
+ */
 const hideSpinner = () =>  // Hide spinner
     document.getElementById("spinner").classList.remove("spinner-visible");
 
-// Load form data from local storage or return default values
+/**
+ * Loads form data from local storage or returns default values if no data is found.
+ * @function
+ * @returns {Object} The form data object.
+ */
 const loadForm = () => {
     const storedForm = localStorage.getItem(LOCAL_STORAGE_KEY);
     return storedForm ? JSON.parse(storedForm) : {
@@ -27,84 +36,44 @@ const loadForm = () => {
     };
 };
 
-// Save form data to local storage
 /**
- * Saves the form data to local storage.
- * The form data includes search term, year abroad preference, course length, 
- * course length weight, university type, postcode, preferred distance, 
- * distance weight, tariff weight, university type weight, year abroad weight, 
- * subjects, and grades.
- * 
+ * Updates the tariff weight slider value when the user moves it.
  * @function
  */
-const saveFormToLocalStorage = () => { 
-    const form = {
-        search_term: document.getElementById('search-input').value,
-        year_abroad: document.getElementById('year-abroad-checkbox').checked,
-        course_length: document.getElementById('course-length-input').value,
-        course_length_weight: document.getElementById('course-length-weight-slider').value,
-        university_type: document.getElementById('university-type-dropdown').value,
-        postcode: document.getElementById('postcode-input').value,
-        preferred_distance: document.getElementById('distance-dropdown').value,
-        distance_weight: document.getElementById('distance-weight-slider').value,
-        tariff_weight: document.getElementById('tariff-weight-slider').value,
-        university_type_weight: document.getElementById('university-type-weight-slider').value,
-        year_abroad_weight: document.getElementById('year-abroad-weight-slider').value,
-        subject: [
-            document.getElementById('subject-dropdown1').value,
-            document.getElementById('subject-dropdown2').value,
-            document.getElementById('subject-dropdown3').value,
-            document.getElementById('subject-dropdown4').value
-        ],
-        grades: [
-            document.getElementById('grade-dropdown1').value,
-            document.getElementById('grade-dropdown2').value,
-            document.getElementById('grade-dropdown3').value,
-            document.getElementById('grade-dropdown4').value
-        ]
-    };
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(form)); // Save form data to local storage
-};
-
-// Update weight values when sliders are moved 
-
-
-/**
- * Updates the course length weight slider when the user moves it
- * @function
- */
-
 const updateTariffWeight = () => {
     const tariffWeight = document.getElementById('tariff-weight-slider').value; 
     document.getElementById('tariff-weight-value').textContent = tariffWeight;
 }
-/**
- * Updates the course length weight slider when the user moves it
- * @function
- */ 
 
+/**
+ * Updates the course length weight slider value when the user moves it.
+ * @function
+ */
 const updateCourseLengthWeight = () => {
     const courseLengthWeight = document.getElementById('course-length-weight-slider').value;
     document.getElementById('course-length-weight-value').textContent = courseLengthWeight;
 }
+
 /**
- * Updates the distance weight slider when the user moves it
+ * Updates the distance weight slider value when the user moves it.
  * @function
  */
 const updateDistanceWeight = () => {
     const distanceWeight = document.getElementById('distance-weight-slider').value;
     document.getElementById('distance-weight-value').textContent = distanceWeight;
 }
+
 /**
- * Updates the university type weight slider when the user moves it
+ * Updates the university type weight slider value when the user moves it.
  * @function
  */
 const updateUniversityTypeWeight = () => {
     const universityTypeWeight = document.getElementById('university-type-weight-slider').value;
     document.getElementById('university-type-weight-value').textContent = universityTypeWeight;
 }
+
 /**
- * Updates the year abroad weight slider when the user moves it
+ * Updates the year abroad weight slider value when the user moves it.
  * @function
  */
 const updateYearAbroadWeight = () => {
@@ -112,13 +81,11 @@ const updateYearAbroadWeight = () => {
     document.getElementById('year-abroad-weight-value').textContent = yearAbroadWeight;
 }
 
-
 /**
- * this function extracts the alternative courses from the courses object
- * and returns them as a string
+ * Extracts the alternative courses from the course object and returns them as an HTML string.
  * @function
- * @param {*} course 
- * @returns {string} tucked courses HTML string
+ * @param {Object} course - The course object containing alternative courses.
+ * @returns {string} The HTML string for alternative courses.
  */
 const getAlternativeCourses = (course) => {
     if (!course.tucked_courses || course.tucked_courses.length == 0) {
@@ -132,12 +99,11 @@ const getAlternativeCourses = (course) => {
     `;
 }
 
-
 /**
- * Generates the HTML content for displaying course requirements
+ * Generates the HTML content for displaying course requirements.
  * @function
- * @param {Object} course 
- * @returns {string} requirements HTML string
+ * @param {Object} course - The course object containing requirements.
+ * @returns {string} The HTML string for course requirements.
  */
 const getRequirements = (course) => {
     if (!course.requirements || course.requirements.length == 0) {
@@ -152,13 +118,10 @@ const getRequirements = (course) => {
     `;
 }
 
-
-
 /**
- * Toggles the visibility of the alternative courses list when the user 
- * clicks on the alternative courses button
+ * Toggles the visibility of the alternative courses list when the user clicks on the alternative courses button.
  * @function
- * @param {HTMLElement} element
+ * @param {HTMLElement} element - The HTML element containing the alternative courses list.
  * @returns {void}
  */
 const toggleAlternativeCourses = (element) => {
@@ -167,10 +130,9 @@ const toggleAlternativeCourses = (element) => {
 }
 
 /**
- * Similar to the toggleAlternativeCourses function, 
- * this function toggles the visibility of the requirements list
+ * Toggles the visibility of the requirements list when the user clicks on the requirements button.
  * @function
- * @param {HTMLElement} element
+ * @param {HTMLElement} element - The HTML element containing the requirements list.
  * @returns {void}
  */
 const toggleRequirements = (element) => {
@@ -178,12 +140,11 @@ const toggleRequirements = (element) => {
     requirements.classList.toggle('hidden');
 }
 
-
 /**
- * Validates the user input and returns an array of error messages
+ * Validates the user input and returns an array of error messages.
  * @function
- * @param {Object} form
- * @returns {Array} errors
+ * @param {Object} form - The form data object.
+ * @returns {Array} An array of error messages.
  */
 const getValidationErrors = (form) => {
     const errors = [];
@@ -205,7 +166,6 @@ const getValidationErrors = (form) => {
         errors.push('Please enter at least 3 A-level grades.');
     }
 
-
     for (let i = 0; i < form.subject.length; i++) {
         if ((form.subject[i] && !form.grades[i]) || (!form.subject[i] && form.grades[i])) {
             errors.push('Each subject must have a corresponding grade and vice versa.');
@@ -220,7 +180,11 @@ const getValidationErrors = (form) => {
     return errors;
 }
 
-/* Favourite courses */
+/**
+ * Adds a course to the list of favourite courses in local storage.
+ * @function
+ * @param {Object} course - The course object to add to favourites.
+ */
 const addFavouriteCourse = (course) => {
     let favouriteCourses = localStorage.getItem(FAVOURITE_COURSES_STORAGE_KEY);
     console.log(favouriteCourses);
@@ -233,6 +197,13 @@ const addFavouriteCourse = (course) => {
     localStorage.setItem(FAVOURITE_COURSES_STORAGE_KEY, JSON.stringify(favouriteCourses));
 }
 
+/**
+ * Removes a course from the list of favourite courses in local storage.
+ * @function
+ * @param {number} id - The ID of the course to remove.
+ * @returns {void}
+ */
+
 const removeFavouriteCourse = (id) => {
     let favouriteCourses = localStorage.getItem(FAVOURITE_COURSES_STORAGE_KEY);
     if (!favouriteCourses) {
@@ -243,6 +214,13 @@ const removeFavouriteCourse = (id) => {
     localStorage.setItem(FAVOURITE_COURSES_STORAGE_KEY, JSON.stringify(favouriteCourses));
 }
 
+
+/**
+ * Checks if a course is in the list of favourite courses.
+ * @function
+ * @param {number} id - The ID of the course to check.
+ * @returns {boolean} True if the course is in the list, false otherwise.
+ */
 const isFavouriteCourse = (id) => {
     let favouriteCourses = localStorage.getItem(FAVOURITE_COURSES_STORAGE_KEY);
     if (!favouriteCourses) {
@@ -252,6 +230,12 @@ const isFavouriteCourse = (id) => {
     return favouriteCourses.some(course => course.course_id === id);
 }
 
+/**
+ * Returns the list of favourite courses from local storage.
+ * @function
+ * @returns {Array} The list of favourite courses.
+ * @returns {Array} An empty array if no favourite courses are found.
+*/
 const getFavouriteCourses = () => {
     let favouriteCourses = localStorage.getItem(FAVOURITE_COURSES_STORAGE_KEY);
     if (!favouriteCourses) {
@@ -260,6 +244,12 @@ const getFavouriteCourses = () => {
     return JSON.parse(favouriteCourses);
 }
 
+
+/**
+ * Clears the list of favourite courses from local storage.
+ * @function
+ * @returns {void} 
+ */
 const clearFavouriteCourses = () => {
     localStorage.removeItem(FAVOURITE_COURSES_STORAGE_KEY);
 }
@@ -269,6 +259,13 @@ const clearFavouriteCourses = () => {
 
 
 
+/**
+ * Creates the results display by adding result boxes to the results element.
+ * @function
+ * @param {Array} courses - The array of course objects to display.
+ * @param {HTMLElement} element - The HTML element to add the result boxes to.
+ * @returns {void}
+ */
 const createResultsDisplay = (courses, element) => {
     
     element.innerHTML = '';
@@ -328,6 +325,11 @@ const createResultsDisplay = (courses, element) => {
     });
 }
 
+/**
+ * Initializes the home page by loading the list of favourite courses from local storage and displaying them.
+ * @function
+ * @returns {void}
+ */
 const initHomePage = () => {
     document.addEventListener('DOMContentLoaded', () => {
         const favouriteCourses = getFavouriteCourses();
@@ -338,7 +340,11 @@ const initHomePage = () => {
     });
 }
 
-// Populate form with saved values
+/**
+ * Initializes the search page by loading the form data from local storage and adding event listeners to the form elements.
+ * @function
+ * @returns {void}
+ */
 const initSearchPage = () => {
     document.addEventListener('DOMContentLoaded', () => {
         const form = loadForm();
