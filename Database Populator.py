@@ -1,18 +1,18 @@
 import psycopg2 as psycopg  # imports the psycopg2 module to connect to the database
 import csv # imports the csv module to read the csv files
-import pandas as pd 
+import pandas as pd # imports the pandas module to handle the csv files
 from psycopg2 import sql
 
-NEA_FOLDER_PATH = 'c:/Users/edwar/OneDrive/!Computer_Science/NEA/'
+FOLDER_PATH = 'c:/Users/edwar/OneDrive/!Computer_Science/NEA/' # change this to the path of the folder where the dataset is stored
 
 def main():
-    # create_database()
+    create_database()
     with psycopg.connect("dbname=University user=postgres password=password123") as conn: # connect to the database
         drop_tables(conn)
         create_tables(conn)
-        university_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/INSTITUTION.csv', 'university')
-        course_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/KISCOURSE.csv', 'course')
-        location_csv = clean_csv(f'{NEA_FOLDER_PATH}dataset/LOCATION.csv', 'location')
+        university_csv = clean_csv(f'{FOLDER_PATH}dataset/INSTITUTION.csv', 'university') # 
+        course_csv = clean_csv(f'{FOLDER_PATH}dataset/KISCOURSE.csv', 'course')
+        location_csv = clean_csv(f'{FOLDER_PATH}dataset/LOCATION.csv', 'location')
         load_csv(conn, university_csv, 'university')
         load_csv(conn, course_csv, 'course')
         load_csv(conn, location_csv, 'location')
@@ -61,10 +61,7 @@ def create_database(): # this function creates the database
         if connection:
             connection.close()
 
-
-
-
-def create_tables(conn):
+def create_tables(conn): # runs the sql commands to create the tables in the database
     with conn.cursor() as cur:
         cur.execute("""
         CREATE TABLE "requirement"(
@@ -130,7 +127,7 @@ def create_tables(conn):
         """)
         conn.commit()
 
-
+# this function loads the csv files into the database
 def load_csv(conn, file_path, table_name):
     with conn.cursor() as cur:
         with open(file_path, 'r') as f:
@@ -152,8 +149,8 @@ def load_csv(conn, file_path, table_name):
 
 def clean_csv(file_path, table_name): # this function cleans the csv files and returns the cleaned csv files
     if table_name == 'university':
-        file1 = f'{NEA_FOLDER_PATH}dataset/INSTITUTION.csv'
-        #file2 = f'{NEA_FOLDER_PATH}dataset/LOCATION.csv'
+        file1 = f'{FOLDER_PATH}dataset/INSTITUTION.csv'
+        #file2 = f'{FOLDER_PATH}dataset/LOCATION.csv'
         df1 = pd.read_csv(file1)
         #df2 = pd.read_csv(file2)
         df1['TYPE'] = 'campus' # this sets all universities to campus type as there is no data for this
@@ -170,13 +167,13 @@ def clean_csv(file_path, table_name): # this function cleans the csv files and r
             'PROVURL': 'university_url',
             'TYPE': 'university_type',
         })
-        output_file = f'{NEA_FOLDER_PATH}cleaned_UNIVERSITY.csv'
+        output_file = f'{FOLDER_PATH}cleaned_UNIVERSITY.csv'
         cleaned_df.to_csv(output_file, index=False)
         return output_file
     
 
     elif table_name == 'location':
-        file5 = f'{NEA_FOLDER_PATH}dataset/LOCATION.csv'
+        file5 = f'{FOLDER_PATH}dataset/LOCATION.csv'
         df5 = pd.read_csv(file5)
         columns_to_keep2 = ['UKPRN','LOCNAME', 'LONGITUDE', 'LATITUDE']
         cleaned_df = df5[columns_to_keep2]
@@ -188,15 +185,15 @@ def clean_csv(file_path, table_name): # this function cleans the csv files and r
             'LONGITUDE': 'longitude',
             'LATITUDE': 'latitude',
         })
-        output_file = f'{NEA_FOLDER_PATH}cleaned_LOCATION.csv'
+        output_file = f'{FOLDER_PATH}cleaned_LOCATION.csv'
         cleaned_df.to_csv(output_file, index=False)
         return output_file
 
 
 
     elif table_name == 'course':
-        file3 = f'{NEA_FOLDER_PATH}dataset/KISCOURSE.csv'
-        file4 = f'{NEA_FOLDER_PATH}dataset/TARIFF.csv'
+        file3 = f'{FOLDER_PATH}dataset/KISCOURSE.csv'
+        file4 = f'{FOLDER_PATH}dataset/TARIFF.csv'
         df3 = pd.read_csv(file3)
         df4 = pd.read_csv(file4)
         merged_df = pd.merge(df3, df4, on=['KISCOURSEID', 'UKPRN'], how='inner')
@@ -232,7 +229,7 @@ def clean_csv(file_path, table_name): # this function cleans the csv files and r
             'T240': 'tariff_240'
         })
         cleaned_df['study_abroad'] = cleaned_df['study_abroad'].astype(bool)
-        output_file = f'{NEA_FOLDER_PATH}cleaned_COURSE.csv'
+        output_file = f'{FOLDER_PATH}cleaned_COURSE.csv'
         cleaned_df.to_csv(output_file, index=False)
         return output_file
 
